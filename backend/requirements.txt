@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+httpx
+python-multipart
+# AI/ML Dependencies
+ollama
+faster-whisper
+piper-tts
+sounddevice
+numpy
+scipy
+# Utils
+pydantic
+pydantic-settings
+uuid
