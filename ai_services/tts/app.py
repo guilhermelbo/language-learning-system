@@ -16,6 +16,10 @@ async def synthesize(text: str = Body(..., embed=True)):
     # Invoke Piper CLI
     # echo "text" | piper --model model.onnx --output_file output.wav
     
+    # Sanitize text: Piper treats newlines as multiple files.
+    # We want a single audio file.
+    text = text.replace("\n", " ").strip()
+    
     try:
         process = subprocess.Popen(
             ["piper", "--model", MODEL_PATH, "--output_file", "-"],
