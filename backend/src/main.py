@@ -59,6 +59,7 @@ class TextResponse(BaseModel):
     ai_text: str
     conversation_id: str
     audio_base64: Optional[str] = None
+    user_audio_base64: Optional[str] = None
 
 class TextInput(BaseModel):
     text: str
@@ -128,12 +129,17 @@ async def process_text(
     audio_b64 = None
     if result.get("ai_audio"):
         audio_b64 = base64.b64encode(result["ai_audio"]).decode("utf-8")
+
+    user_audio_b64 = None
+    if result.get("user_audio"):
+        user_audio_b64 = base64.b64encode(result["user_audio"]).decode("utf-8")
     
     return {
         "user_text": result["user_text"],
         "ai_text": result["ai_text"],
         "conversation_id": result["conversation_id"],
-        "audio_base64": audio_b64
+        "audio_base64": audio_b64,
+        "user_audio_base64": user_audio_b64
     }
 
 @app.get("/health")

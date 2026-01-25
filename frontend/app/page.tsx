@@ -125,9 +125,23 @@ export default function Home() {
                       { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
                     ]);
 
+                    const playAudio = async (base64Audio: string) => {
+                      return new Promise<void>((resolve) => {
+                        const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
+                        audio.onended = () => resolve();
+                        audio.play().catch(e => {
+                          console.error("Audio playback failed:", e);
+                          resolve();
+                        });
+                      });
+                    };
+
+                    if (data.user_audio_base64) {
+                      await playAudio(data.user_audio_base64);
+                    }
+
                     if (data.audio_base64) {
-                      const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
-                      audio.play().catch(e => console.error("Audio playback failed:", e));
+                      await playAudio(data.audio_base64);
                     }
                   } catch (err) {
                     console.error("Error sending text:", err);

@@ -77,6 +77,10 @@ class ProcessUserTextUseCase:
         user_message = Message(content=text, role="user")
         conversation.add_message(user_message)
         
+        # 1.5. TTS: User Text -> Audio (New feature)
+        self.logger.info(f"Step 0 (Text): Synthesizing audio for user text: '{text[:20]}...'")
+        user_audio_bytes = await self.tts.synthesize(text)
+
         # 2. LLM: Text -> Text Response
         self.logger.info(f"Step 1 (Text): Sending to LLM. History size: {len(conversation.messages)}")
         ai_text = await self.llm.generate_response(conversation.messages)
@@ -93,6 +97,7 @@ class ProcessUserTextUseCase:
         
         return {
             "user_text": text,
+            "user_audio": user_audio_bytes,
             "ai_text": ai_text,
             "ai_audio": ai_audio_bytes,
             "conversation_id": str(conversation.id)
