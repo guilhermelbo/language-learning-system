@@ -15,12 +15,30 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({ onRecordingComplete, i
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream);
+
+            // Determine supported mimeType
+            const mimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/mp4',
+                'audio/ogg'
+            ];
+
+            let selectedMimeType = '';
+            for (const type of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    selectedMimeType = type;
+                    break;
+                }
+            }
+
+            const options = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
+            const recorder = new MediaRecorder(stream, options);
             const chunks: BlobPart[] = [];
 
             recorder.ondataavailable = (e) => chunks.push(e.data);
             recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const blob = new Blob(chunks, { type: selectedMimeType || 'audio/webm' });
                 onRecordingComplete(blob);
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -46,8 +64,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({ onRecordingComplete, i
                 onClick={isRecording ? stopRecording : startRecording}
                 disabled={isProcessing}
                 className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isRecording
-                        ? 'bg-red-500 hover:bg-red-600 scale-110'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    ? 'bg-red-500 hover:bg-red-600 scale-110'
+                    : 'bg-indigo-600 hover:bg-indigo-700'
                     } ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isRecording ? 'pulse-red' : ''
                     }`}
                 style={isRecording ? { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' } : undefined}

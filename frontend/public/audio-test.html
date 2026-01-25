@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recording Test</title>
+</head>
+<body>
+    <h1>Manual Audio Test</h1>
+    <button id="recordBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    <br><br>
+    <audio id="audioPlayback" controls></audio>
+    <p id="status">Ready</p>
+    <p id="log"></p>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const status = document.getElementById('status');
+        const logDisplay = document.getElementById('log');
+
+        function log(msg) {
+            logDisplay.innerHTML += msg + '<br>';
+            console.log(msg);
+        }
+
+        recordBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('Microphone access granted.');
+                
+                // Try to find a supported mimeType
+                const mimeTypes = [
+                    'audio/webm;codecs=opus', 
+                    'audio/webm', 
+                    'audio/mp4',
+                    'audio/ogg'
+                ];
+                let selectedMimeType = '';
+                for (const type of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        selectedMimeType = type;
+                        log('Using mimeType: ' + type);
+                        break;
+                    }
+                }
+
+                if (!selectedMimeType) {
+                    log('No supported mimeType found from the list.');
+                    mediaRecorder = new MediaRecorder(stream);
+                } else {
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+                }
+
+                mediaRecorder.start();
+                status.textContent = 'Recording...';
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    log(`Data available: ${event.data.size} bytes`);
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    status.textContent = 'Processing...';
+                    const audioBlob = new Blob(audioChunks, { type: selectedMimeType || 'audio/webm' });
+                    log(`Blob created. Size: ${audioBlob.size}, Type: ${audioBlob.type}`);
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayback.src = audioUrl;
+                    status.textContent = 'Ready to play';
+                };
+
+            } catch (err) {
+                log('Error accessing microphone: ' + err);
+                status.textContent = 'Error';
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                status.textContent = 'Stopping...';
+                recordBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -17,6 +17,20 @@ class ProcessUserSpeechUseCase:
         self.logger = logging.getLogger(__name__)
 
     async def execute(self, conversation: Conversation, audio_data: bytes) -> dict:
+        # 0. Save Input Audio for Debugging
+        input_dir = "input_audio"
+        os.makedirs(input_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"input_{timestamp}.webm"
+        file_path = os.path.join(input_dir, filename)
+        
+        try:
+            with open(file_path, "wb") as f:
+                f.write(audio_data)
+            self.logger.info(f"Saved input audio to {file_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to save input audio: {e}")
+
         # 1. STT: Audio -> Text
         self.logger.info(f"Step 1: Starting STT with {len(audio_data)} bytes of audio")
         user_text = await self.stt.transcribe(audio_data)
