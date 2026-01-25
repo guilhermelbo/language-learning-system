@@ -6,13 +6,16 @@ import io
 
 app = FastAPI()
 
-# Configuration
-# Assuming we mount models to /models
-# Default model: pt_BR-faber-medium.onnx
-MODEL_PATH = os.environ.get("PIPER_MODEL_PATH", "/models/pt_BR-faber-medium.onnx")
+# Models
+MODELS = {
+    "pt": "/models/pt_BR-faber-medium.onnx",
+    "en": "/models/en_US-lessac-medium.onnx"
+}
 
 @app.post("/synthesize")
-async def synthesize(text: str = Body(..., embed=True)):
+async def synthesize(text: str = Body(..., embed=True), lang: str = "pt"):
+    model_path = MODELS.get(lang, MODELS["pt"])
+
     # Invoke Piper CLI
     # echo "text" | piper --model model.onnx --output_file output.wav
     
@@ -22,7 +25,7 @@ async def synthesize(text: str = Body(..., embed=True)):
     
     try:
         process = subprocess.Popen(
-            ["piper", "--model", MODEL_PATH, "--output_file", "-"],
+            ["piper", "--model", model_path, "--output_file", "-"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE

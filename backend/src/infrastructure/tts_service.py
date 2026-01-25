@@ -8,7 +8,7 @@ class PiperTTSService(TTSService):
     def __init__(self, api_url: str = "http://localhost:8002"):
         self.api_url = api_url
 
-    async def synthesize(self, text: str) -> bytes:
+    async def synthesize(self, text: str, lang: str = "pt") -> bytes:
         async with httpx.AsyncClient() as client:
             try:
                 # Piper API expects plain text or JSON
@@ -16,10 +16,11 @@ class PiperTTSService(TTSService):
                 # but let's check app.py: synthesize(text: str = Body(..., embed=True))
                 # So JSON: {"text": "Hello"}
                 
-                logger.debug(f"Synthesizing audio for text: '{text[:20]}...' at {self.api_url}")
+                logger.debug(f"Synthesizing audio for text: '{text[:20]}...' at {self.api_url} with lang {lang}")
                 response = await client.post(
                     f"{self.api_url}/synthesize", 
                     json={"text": text},
+                    params={"lang": lang},
                     timeout=30.0
                 )
                 response.raise_for_status()
