@@ -19,7 +19,9 @@ RUN pip install fastapi uvicorn
 COPY app.py /app/app.py
 
 # Models directory
-RUN mkdir /models
+RUN mkdir /models && \
+    curl -L -o /models/pt_BR-faber-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx && \
+    curl -L -o /models/pt_BR-faber-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx.json
 
 # Add piper to path locally or call it directly. 
 # In app.py we call "piper", so let's add to PATH

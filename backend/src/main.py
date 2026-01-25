@@ -51,10 +51,13 @@ except Exception as e:
     pass
 
 
+import base64
+
 class TextResponse(BaseModel):
     user_text: str
     ai_text: str
     conversation_id: str
+    audio_base64: Optional[str] = None
 
 @app.post("/conversation/speech", response_model=TextResponse)
 async def process_speech(
@@ -82,21 +85,16 @@ async def process_speech(
     # Save State
     await conversation_repo.save(conversation)
     
-    # TODO: Return Audio binary. 
-    # For this endpoint, returning JSON with texts. 
-    # We need a way to return the audio. 
-    # Option 1: Return Multipart response (complex).
-    # Option 2: Return JSON with Base64 audio.
-    # Option 3: Return JSON and have a separate endpoint for audio URL (standard).
-    
-    # For MVP simplicity: Request -> Returns JSON with texts and ID. 
-    # AND we'll hack it to return the audio bytes directly for now if requested, 
-    # or base64 encode it in the JSON.
+    # Encode Audio to Base64
+    audio_b64 = None
+    if result.get("ai_audio"):
+        audio_b64 = base64.b64encode(result["ai_audio"]).decode("utf-8")
     
     return {
         "user_text": result["user_text"],
         "ai_text": result["ai_text"],
-        "conversation_id": result["conversation_id"]
+        "conversation_id": result["conversation_id"],
+        "audio_base64": audio_b64
     }
 
 @app.get("/health")

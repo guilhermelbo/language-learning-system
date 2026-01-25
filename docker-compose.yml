@@ -12,8 +12,8 @@ services:
 
   stt:
     build:
-      context: .
-      dockerfile: ai_services/stt/Dockerfile
+      context: ./ai_services/stt
+      dockerfile: Dockerfile
     container_name: lingo-stt
     ports:
       - "8001:8001"
@@ -21,8 +21,8 @@ services:
 
   tts:
     build:
-      context: .
-      dockerfile: ai_services/tts/Dockerfile
+      context: ./ai_services/tts
+      dockerfile: Dockerfile
     container_name: lingo-tts
     ports:
       - "8002:8002"

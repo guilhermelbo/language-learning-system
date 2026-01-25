@@ -43,9 +43,11 @@ export default function Home() {
         { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
       ]);
 
-      // Handle audio playback if needed
-      // const audioResponse = await fetch(`http://localhost:8000/audio/${data.audio_id}`);
-      // ...
+      // Play Audio
+      if (data.audio_base64) {
+        const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
+        audio.play().catch(e => console.error("Audio playback failed:", e));
+      }
 
     } catch (err) {
       console.error("Error sending audio to backend:", err);

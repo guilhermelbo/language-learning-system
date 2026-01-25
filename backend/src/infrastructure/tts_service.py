@@ -1,5 +1,8 @@
 import httpx
+import logging
 from ..domain.interfaces import TTSService
+
+logger = logging.getLogger(__name__)
 
 class PiperTTSService(TTSService):
     def __init__(self, api_url: str = "http://localhost:8002"):
@@ -13,15 +16,17 @@ class PiperTTSService(TTSService):
                 # but let's check app.py: synthesize(text: str = Body(..., embed=True))
                 # So JSON: {"text": "Hello"}
                 
+                logger.debug(f"Synthesizing audio for text: '{text[:20]}...' at {self.api_url}")
                 response = await client.post(
                     f"{self.api_url}/synthesize", 
                     json={"text": text},
                     timeout=30.0
                 )
                 response.raise_for_status()
+                logger.debug(f"TTS synthesis successful, received {len(response.content)} bytes")
                 return response.content
             except Exception as e:
-                print(f"TTS Service Error: {e}")
+                logger.error(f"TTS Service Error: {e}")
                 return b""
 
     async def synthesize_to_file(self, text: str, output_path: str) -> str:
