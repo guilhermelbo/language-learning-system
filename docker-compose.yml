@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+  stt:
+    build:
+      context: .
+      dockerfile: ai_services/stt/Dockerfile
+    container_name: lingo-stt
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  tts:
+    build:
+      context: .
+      dockerfile: ai_services/tts/Dockerfile
+    container_name: lingo-tts
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+
+volumes:
+  ollama:

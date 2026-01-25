@@ -34,15 +34,12 @@ PIPER_MODEL_PATH = os.environ.get("PIPER_MODEL_PATH", "pt_BR-faber-medium.onnx")
 # Global Dependencies (Singleton-ish for MVP)
 # In production, use dependency injection properly (Depends)
 try:
-    stt_service = FasterWhisperSTTService(model_size=STT_MODEL_SIZE)
-    llm_service = OllamaLLMService(model=LLM_MODEL_NAME)
-    # tts_service = PiperTTSService(model_path=PIPER_MODEL_PATH)
-    # Mocking TTS for now if model not present to avoid crash during startup
-    if os.path.exists(PIPER_MODEL_PATH):
-        tts_service = PiperTTSService(model_path=PIPER_MODEL_PATH)
-    else:
-        print(f"Warning: Piper model not found at {PIPER_MODEL_PATH}. TTS will fail.")
-        tts_service = None 
+    # Initialize Services with Container URLs
+    # Assuming default ports: STT=8001, TTS=8002, Ollama=11434
+    
+    stt_service = FasterWhisperSTTService(api_url="http://localhost:8001")
+    llm_service = OllamaLLMService(model=LLM_MODEL_NAME) # Ollama client usually defaults to localhost:11434
+    tts_service = PiperTTSService(api_url="http://localhost:8002")
 
     conversation_repo = InMemoryConversationRepository()
     

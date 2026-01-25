@@ -23,21 +23,25 @@
 ## 📦 Instalação e Configuração
 
 ### Pré-requisitos
-- Python 3.10 ou superior
-- Node.js 18+
-- [Ollama](https://ollama.com/) instalado e rodando
-- Git
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando.
+- Git.
 
-### 1. Configurar Modelos de IA
-Primeiro, certifique-se de ter os modelos necessários:
+### 1. Iniciar Infraestrutura de IA
+O projeto utiliza containers Docker para orquestrar os modelos de IA (LLM, STT, TTS).
 
 ```bash
-# Inicie o Ollama e baixe o modelo Mistral
-ollama pull mistral
-ollama serve
-```
+# Na raiz do projeto, suba os serviços
+docker-compose up -d --build
 
-Para o TTS (Piper), o sistema espera um arquivo `.onnx` do modelo de voz. (Configuração padrão aponta para `pt_BR-faber-medium.onnx`). *Nota: No MVP atual, o TTS pode ser mockado se o arquivo não estiver presente.*
+# (Apenas na primeira vez) Baixe o modelo do Ollama
+docker exec ollama ollama pull mistral
+```
+Isso iniciará:
+- **Ollama** (LLM) na porta `11434`
+- **STT Service** na porta `8001`
+- **TTS Service** na porta `8002`
+
+*Nota: O download das imagens e modelos pode levar alguns minutos.*
 
 ### 2. Backend (Python)
 
@@ -46,10 +50,7 @@ cd backend
 
 # Criar e ativar ambiente virtual
 python -m venv venv
-# Windows
 .\venv\Scripts\activate
-# Linux/Mac
-# source venv/bin/activate
 
 # Instalar dependências
 pip install -r requirements.txt
@@ -57,7 +58,7 @@ pip install -r requirements.txt
 # Rodar servidor API
 uvicorn src.main:app --reload
 ```
-A API estará disponível em `http://localhost:8000`. Swagger docs em `http://localhost:8000/docs`.
+A API backend se conectará automaticamente aos serviços Docker nas portas locais.
 
 ### 3. Frontend (Next.js)
 

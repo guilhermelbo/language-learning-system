@@ -1,21 +1,19 @@
-import io
-from faster_whisper import WhisperModel
+import httpx
 from ..domain.interfaces import STTService
 
 class FasterWhisperSTTService(STTService):
-    def __init__(self, model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
-        print(f"Loading Faster Whisper model: {model_size} on {device}...")
-        self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
-        print("Faster Whisper model loaded.")
+    def __init__(self, api_url: str = "http://localhost:8001"):
+        self.api_url = api_url
 
     async def transcribe(self, audio_data: bytes) -> str:
-        # faster-whisper accepts a file-like object
-        audio_file = io.BytesIO(audio_data)
-        
-        segments, info = self.model.transcribe(audio_file, beam_size=5)
-        
-        text = ""
-        for segment in segments:
-            text += segment.text
-            
-        return text.strip()
+        async with httpx.AsyncClient() as client:
+            files = {'file': ('audio.webm', audio_data, 'audio/webm')}
+            try:
+                response = await client.post(f"{self.api_url}/transcribe", files=files, timeout=30.0)
+                response.raise_for_status()
+                result = response.json()
+                return result.get("text", "")
+            except httpx.RequestError as e:
+                print(f"STT Service Error: {e}")
+                # Fallback or re-raise
+                return ""
