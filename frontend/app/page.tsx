@@ -90,7 +90,65 @@ export default function Home() {
 
       {/* Footer / Controls */}
       <footer className="p-8 border-t border-white/5 bg-black/20 backdrop-blur-md">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
+
+          {/* Text Input */}
+          <div className="w-full relative">
+            <input
+              type="text"
+              placeholder="Digite sua mensagem..."
+              className="w-full bg-white/5 border border-white/10 rounded-full px-6 py-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-light"
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && e.currentTarget.value.trim() && !isProcessing) {
+                  const text = e.currentTarget.value.trim();
+                  e.currentTarget.value = '';
+                  setIsProcessing(true);
+
+                  try {
+                    const response = await fetch('http://localhost:8000/conversation/text', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        text,
+                        conversation_id: conversationId
+                      }),
+                    });
+
+                    if (!response.ok) throw new Error("API call failed");
+
+                    const data = await response.json();
+
+                    setConversationId(data.conversation_id);
+                    setMessages(prev => [
+                      ...prev,
+                      { role: 'user', content: data.user_text, id: Math.random().toString() },
+                      { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
+                    ]);
+
+                    if (data.audio_base64) {
+                      const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
+                      audio.play().catch(e => console.error("Audio playback failed:", e));
+                    }
+                  } catch (err) {
+                    console.error("Error sending text:", err);
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }
+              }}
+              disabled={isProcessing}
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              {isProcessing && <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full"></div>}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-white/10 w-32"></div>
+            <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">OU FALE</span>
+            <div className="h-px flex-1 bg-white/10 w-32"></div>
+          </div>
+
           <VoiceButton
             onRecordingComplete={handleRecordingComplete}
             isProcessing={isProcessing}

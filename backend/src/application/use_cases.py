@@ -61,3 +61,39 @@ class ProcessUserSpeechUseCase:
             "ai_audio": ai_audio_bytes,
             "conversation_id": str(conversation.id)
         }
+
+class ProcessUserTextUseCase:
+    def __init__(
+        self, 
+        llm_service: LLMService, 
+        tts_service: TTSService
+    ):
+        self.llm = llm_service
+        self.tts = tts_service
+        self.logger = logging.getLogger(__name__)
+
+    async def execute(self, conversation: Conversation, text: str) -> dict:
+        # 1. Update History (User)
+        user_message = Message(content=text, role="user")
+        conversation.add_message(user_message)
+        
+        # 2. LLM: Text -> Text Response
+        self.logger.info(f"Step 1 (Text): Sending to LLM. History size: {len(conversation.messages)}")
+        ai_text = await self.llm.generate_response(conversation.messages)
+        self.logger.info(f"Step 1 (Text): LLM Result: '{ai_text}'")
+        
+        # 3. Update History (AI)
+        ai_message = Message(content=ai_text, role="assistant")
+        conversation.add_message(ai_message)
+        
+        # 4. TTS: Text Response -> Audio
+        self.logger.info(f"Step 2 (Text): Starting TTS for text: '{ai_text[:50]}...'")
+        ai_audio_bytes = await self.tts.synthesize(ai_text)
+        self.logger.info(f"Step 2 (Text): TTS complete. Audio size: {len(ai_audio_bytes)} bytes")
+        
+        return {
+            "user_text": text,
+            "ai_text": ai_text,
+            "ai_audio": ai_audio_bytes,
+            "conversation_id": str(conversation.id)
+        }
