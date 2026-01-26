@@ -6,6 +6,8 @@ python-multipart
 ollama
 faster-whisper
 piper-tts
+langdetect
+nltk
 sounddevice
 numpy
 scipy

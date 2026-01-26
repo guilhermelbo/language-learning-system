@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Optional
-from .entities import Message
+from uuid import UUID
+from .entities import Message, Conversation
 
 class STTService(ABC):
     @abstractmethod
@@ -26,6 +27,17 @@ class TTSService(ABC):
         pass
     
     @abstractmethod
-    async def synthesize_to_file(self, text: str, output_path: str) -> str:
+    async def synthesize_to_file(self, text: str, output_path: str, lang: str = "pt") -> str:
         """Synthesizes text to an audio file and returns the path."""
+        pass
+
+class ConversationRepository(ABC):
+    @abstractmethod
+    async def get_by_id(self, conversation_id: UUID) -> Optional[Conversation]:
+        """Retrieves a conversation by its unique ID."""
+        pass
+
+    @abstractmethod
+    async def save(self, conversation: Conversation):
+        """Saves a conversation."""
         pass

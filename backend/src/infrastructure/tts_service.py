@@ -30,8 +30,8 @@ class PiperTTSService(TTSService):
                 logger.error(f"TTS Service Error: {e}")
                 return b""
 
-    async def synthesize_to_file(self, text: str, output_path: str) -> str:
-        audio_bytes = await self.synthesize(text)
+    async def synthesize_to_file(self, text: str, output_path: str, lang: str = "pt") -> str:
+        audio_bytes = await self.synthesize(text, lang=lang)
         with open(output_path, "wb") as f:
             f.write(audio_bytes)
         return output_path
