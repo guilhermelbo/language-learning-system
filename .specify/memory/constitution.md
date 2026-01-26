@@ -1,20 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 -> 1.1.0
-- List of modified principles:
-    - [NEW] SDD Article I: Library-First Principle
-    - [NEW] SDD Article II: CLI Interface Mandate
-    - [NEW] SDD Article III: Test-First Imperative
-    - [NEW] SDD Article VII: Simplicity
-    - [NEW] SDD Article VIII: Anti-Abstraction
-    - [NEW] SDD Article IX: Integration-First Testing
-    - [RENAMED] Privacy-First & Local AI -> Article IV
-    - [RENAMED] Clean Architecture Compliance -> Article V
-    - [RENAMED] High Performance & Low Latency -> Article VI
-    - [RENAMED] Adaptive Learning & Memory -> Article X
-- Templates requiring updates:
-    - .specify/templates/plan-template.md (⚠ pending)
-    - .specify/templates/spec-template.md (⚠ pending)
+- Version change: 1.1.0 -> 1.1.1
+- Previous version: 1.0.0 -> 1.1.0 (major restructuring with SDD principles)
+- Changes in 1.1.1: Validation pass - no content changes, template sync verified
+- Templates status:
+    - .specify/templates/plan-template.md (✅ validated - correctly references Articles VII, VIII, IX)
+    - .specify/templates/spec-template.md (✅ validated - constitution-agnostic by design)
+    - .specify/templates/tasks-template.md (✅ validated - aligns with Article III TDD approach)
+- All 10 principles verified intact (Articles I-X)
+- Follow-up TODOs: None
 -->
 # LingoAI Constitution
 
@@ -86,4 +80,4 @@ This Constitution supersedes all other documentation. Amendments require a Pull 
 ### Compliance
 All architectural decisions and Pull Requests must be verified against these principles. The "Constitution Check" in implementation plans is mandatory.
 
-**Version**: 1.1.0 | **Ratified**: 2026-01-25 | **Last Amended**: 2026-01-25
+**Version**: 1.1.1 | **Ratified**: 2026-01-25 | **Last Amended**: 2026-01-25
