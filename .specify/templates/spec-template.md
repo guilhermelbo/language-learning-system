@@ -1,134 +1,102 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
-**Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+## Overview
 
-## SDD Constraints (Automated)
-- ✅ Focus on WHAT users need and WHY
-- ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
-- ❌ No speculative or "might need" features
+[Brief description of the feature and its purpose]
 
-## Uncertainty Markers
-> **CRITICAL**: Do not guess!
-> 1. Mark ambiguities with `[NEEDS CLARIFICATION: specific question]`
-> 2. If prompt doesn't specify auth/data details, ask instead of assuming.
+## Problem Statement
 
-## User Scenarios & Testing *(mandatory)*
+[What problem does this feature solve? Why is it needed?]
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+## Goals
 
-### User Story 1 - [Brief Title] (Priority: P1)
+- [Goal 1]
+- [Goal 2]
+- [Goal 3]
 
-[Describe this user journey in plain language]
+## User Stories
 
-**Why this priority**: [Explain the value and why it has this priority level]
+### [User Type 1]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+- As a [user type], I want to [action] so that [benefit]
 
-**Acceptance Scenarios**:
+## Functional Requirements
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+### FR-1: [Requirement Name]
 
----
+**Description**: [What the system must do]
 
-### User Story 2 - [Brief Title] (Priority: P2)
+**Acceptance Criteria**:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
 
-[Describe this user journey in plain language]
+### FR-2: [Requirement Name]
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**Description**: [What the system must do]
 
-**Independent Test**: [Describe how this can be tested independently]
+**Acceptance Criteria**:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
 
-**Acceptance Scenarios**:
+## Non-Functional Requirements
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+### Performance
 
----
+- [Performance requirement 1]
 
-### User Story 3 - [Brief Title] (Priority: P3)
+### Usability
 
-[Describe this user journey in plain language]
+- [Usability requirement 1]
 
-**Why this priority**: [Explain the value and why it has this priority level]
+### Reliability
 
-**Independent Test**: [Describe how this can be tested independently]
+- [Reliability requirement 1]
 
-**Acceptance Scenarios**:
+## User Scenarios & Testing
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+### Scenario 1: [Scenario Name]
 
----
+**Given**: [Initial context]
+**When**: [Action taken]
+**Then**: [Expected outcome]
 
-[Add more user stories as needed, each with an assigned priority]
+### Scenario 2: [Scenario Name]
 
-### Edge Cases
+**Given**: [Initial context]
+**When**: [Action taken]
+**Then**: [Expected outcome]
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
+## Edge Cases
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- [Edge case 1]
+- [Edge case 2]
 
-## Requirements *(mandatory)*
+## Key Entities
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
+| Entity | Description | Key Attributes |
+|--------|-------------|----------------|
+| [Entity 1] | [Description] | [Attributes] |
 
-### Functional Requirements
+## Success Criteria
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- [ ] [Measurable outcome 1]
+- [ ] [Measurable outcome 2]
+- [ ] [Measurable outcome 3]
 
-*Example of marking unclear requirements:*
+## Assumptions
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- [Assumption 1]
+- [Assumption 2]
 
-### Key Entities *(include if feature involves data)*
+## Dependencies
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+- [Dependency 1]
+- [Dependency 2]
 
-## Success Criteria *(mandatory)*
+## Out of Scope
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
+- [What is explicitly NOT included]
 
-### Measurable Outcomes
+## Open Questions
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
-
----
-
-## Requirement Completeness Check
-
-- [ ] No `[NEEDS CLARIFICATION]` markers remain
-- [ ] Requirements are testable and unambiguous
-- [ ] Success criteria are measurable
-- [ ] Features are atomic and map to user stories
+- [Any remaining questions to be resolved]

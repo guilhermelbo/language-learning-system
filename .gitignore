@@ -18,3 +18,5 @@ frontend/build
 .idea/
 
 .playwright-mcp
+
+settings.local.json
