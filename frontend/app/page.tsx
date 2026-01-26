@@ -22,7 +22,7 @@ interface APIResponse {
   ai_text: string;
   segments: Segment[];
   conversation_id: string;
-  audio_base64?: string;
+  audio_urls?: string[];
   user_audio_base64?: string;
 }
 
@@ -31,9 +31,62 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
+  const playAudioSequence = (urls: string[]): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!urls || urls.length === 0) {
+        resolve();
+        return;
+      }
+      
+      const playNext = (index: number) => {
+        if (index >= urls.length) {
+          resolve();
+          return;
+        }
+        
+        const fullUrl = `http://localhost:8000${urls[index]}`;
+        const audio = new Audio(fullUrl);
+        
+        audio.onended = () => {
+          playNext(index + 1);
+        };
+        
+        audio.onerror = (e) => {
+          console.error("Audio playback failed for:", fullUrl, e);
+          playNext(index + 1); 
+        };
+        
+        audio.play().catch(e => {
+          console.error("Audio playback failed to start for:", fullUrl, e);
+          playNext(index + 1);
+        });
+      };
+      
+      playNext(0);
+    });
+  };
+
+  const playBase64Audio = (base64Audio: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!base64Audio) {
+        resolve();
+        return;
+      }
+      const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
+      audio.onended = () => resolve();
+      audio.onerror = (e) => {
+        console.error("Base64 audio playback failed:", e);
+        resolve();
+      };
+      audio.play().catch(e => {
+        console.error("Base64 audio playback failed to start:", e);
+        resolve();
+      });
+    });
+  };
+
   const handleRecordingComplete = async (blob: Blob) => {
     setIsProcessing(true);
-
     try {
       const formData = new FormData();
       formData.append('file', blob, 'recording.webm');
@@ -41,7 +94,6 @@ export default function Home() {
         formData.append('conversation_id', conversationId);
       }
 
-      // TODO: Replace with actual backend URL
       const response = await fetch('http://localhost:8000/conversation/speech', {
         method: 'POST',
         body: formData,
@@ -58,15 +110,10 @@ export default function Home() {
         { role: 'assistant', content: data.ai_text, id: Math.random().toString(), segments: data.segments }
       ]);
 
-      // Play Audio
-      if (data.audio_base64) {
-        const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
-        audio.play().catch(e => console.error("Audio playback failed:", e));
-      }
+      await playAudioSequence(data.audio_urls || []);
 
     } catch (err) {
       console.error("Error sending audio to backend:", err);
-      // Fallback/Mock for testing UI without backend
       setMessages(prev => [
         ...prev,
         { role: 'user', content: "Simulação de fala (Backend Offline)", id: Math.random().toString() },
@@ -139,24 +186,13 @@ export default function Home() {
                       { role: 'user', content: data.user_text, id: Math.random().toString() },
                       { role: 'assistant', content: data.ai_text, id: Math.random().toString(), segments: data.segments }
                     ]);
-
-                    const playAudio = async (base64Audio: string) => {
-                      return new Promise<void>((resolve) => {
-                        const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
-                        audio.onended = () => resolve();
-                        audio.play().catch(e => {
-                          console.error("Audio playback failed:", e);
-                          resolve();
-                        });
-                      });
-                    };
-
+                    
                     if (data.user_audio_base64) {
-                      await playAudio(data.user_audio_base64);
+                      await playBase64Audio(data.user_audio_base64);
                     }
 
-                    if (data.audio_base64) {
-                      await playAudio(data.audio_base64);
+                    if (data.audio_urls) {
+                      await playAudioSequence(data.audio_urls);
                     }
                   } catch (err) {
                     console.error("Error sending text:", err);
