@@ -162,12 +162,12 @@
 
 **Goal**: Final integration testing and cleanup
 
-- [ ] T057 Run full integration test: speech input → bilingual display
-- [ ] T058 Run full integration test: text input → bilingual display
-- [ ] T059 Test backward compatibility: old frontend with new backend (ai_text still works)
-- [ ] T060 Verify error logging captures extraction failures with context
-- [ ] T061 Remove any commented-out old parsing code from use_cases.py
-- [ ] T062 Update type hints/docstrings for new functions in `backend/src/application/`
+- [x] T057 Run full integration test: speech input → bilingual display
+- [x] T058 Run full integration test: text input → bilingual display
+- [x] T059 Test backward compatibility: old frontend with new backend (ai_text still works)
+- [x] T060 Verify error logging captures extraction failures with context
+- [x] T061 Remove any commented-out old parsing code from use_cases.py
+- [x] T062 Update type hints/docstrings for new functions in `backend/src/application/`
 
 ---
 
