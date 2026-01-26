@@ -1,0 +1,2 @@
+# Ignore generated audio files from TTS service
+/static/audio/
