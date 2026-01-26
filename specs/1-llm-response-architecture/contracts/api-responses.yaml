@@ -1,0 +1,172 @@
+# OpenAPI 3.0 Contract: LLM Response Architecture
+# Branch: 1-llm-response-architecture
+# Created: 2026-01-25
+
+openapi: 3.0.3
+info:
+  title: Language Learning AI API - Response Contract
+  description: API contract for structured LLM responses with bilingual support
+  version: 1.1.0
+
+paths:
+  /conversation/speech:
+    post:
+      summary: Process speech input
+      description: Transcribes audio, generates LLM response, and synthesizes speech
+      operationId: processSpeech
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio file (WebM, WAV, etc.)
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Optional existing conversation ID
+      responses:
+        '200':
+          description: Successful response with bilingual content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StructuredTextResponse'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Service error
+
+  /conversation/text:
+    post:
+      summary: Process text input
+      description: Generates LLM response and synthesizes speech
+      operationId: processText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextInput'
+      responses:
+        '200':
+          description: Successful response with bilingual content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StructuredTextResponse'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Service error
+
+components:
+  schemas:
+    TextInput:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: User's text input
+          example: "Como se diz 'obrigado' em inglês?"
+        conversation_id:
+          type: string
+          format: uuid
+          description: Optional existing conversation ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+    Segment:
+      type: object
+      required:
+        - text
+        - lang
+      properties:
+        text:
+          type: string
+          description: Text content in the specified language
+          example: "Olá, como posso ajudar você hoje?"
+        lang:
+          type: string
+          description: ISO 639-1 language code
+          enum: [pt, en]
+          example: "pt"
+
+    StructuredTextResponse:
+      type: object
+      required:
+        - user_text
+        - ai_text
+        - segments
+        - conversation_id
+      properties:
+        user_text:
+          type: string
+          description: User's input text (transcribed if from speech)
+          example: "Como se diz obrigado em inglês?"
+        ai_text:
+          type: string
+          description: Combined AI response text (backward compatible)
+          example: "A palavra 'obrigado' em inglês é 'thank you'. The word 'obrigado' in English is 'thank you'."
+        segments:
+          type: array
+          description: Structured bilingual segments
+          items:
+            $ref: '#/components/schemas/Segment'
+          example:
+            - text: "A palavra 'obrigado' em inglês é 'thank you'."
+              lang: "pt"
+            - text: "The word 'obrigado' in English is 'thank you'."
+              lang: "en"
+        conversation_id:
+          type: string
+          format: uuid
+          description: Conversation identifier for continuity
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        audio_base64:
+          type: string
+          description: Base64-encoded WAV audio of AI response
+          nullable: true
+        user_audio_base64:
+          type: string
+          description: Base64-encoded WAV audio of user text (text endpoint only)
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Conversation not found"
+
+# Response Examples
+x-examples:
+  successful-bilingual:
+    summary: Successful bilingual response
+    value:
+      user_text: "Como se diz obrigado em inglês?"
+      ai_text: "A palavra 'obrigado' em inglês é 'thank you'. The word 'obrigado' in English is 'thank you'."
+      segments:
+        - text: "A palavra 'obrigado' em inglês é 'thank you'."
+          lang: "pt"
+        - text: "The word 'obrigado' in English is 'thank you'."
+          lang: "en"
+      conversation_id: "123e4567-e89b-12d3-a456-426614174000"
+      audio_base64: "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKw..."
+
+  fallback-response:
+    summary: Fallback when LLM parsing fails
+    value:
+      user_text: "Hello"
+      ai_text: "Desculpe, não consegui gerar uma resposta para isso."
+      segments:
+        - text: "Desculpe, não consegui gerar uma resposta para isso."
+          lang: "pt"
+      conversation_id: "123e4567-e89b-12d3-a456-426614174000"
+      audio_base64: null
