@@ -1,73 +1,148 @@
+#!/usr/bin/env pwsh
+
+# Consolidated prerequisite checking script (PowerShell)
+#
+# This script provides unified prerequisite checking for Spec-Driven Development workflow.
+# It replaces the functionality previously spread across multiple scripts.
+#
+# Usage: ./check-prerequisites.ps1 [OPTIONS]
+#
+# OPTIONS:
+#   -Json               Output in JSON format
+#   -RequireTasks       Require tasks.md to exist (for implementation phase)
+#   -IncludeTasks       Include tasks.md in AVAILABLE_DOCS list
+#   -PathsOnly          Only output path variables (no validation)
+#   -Help, -h           Show help message
+
+[CmdletBinding()]
 param(
-    [Parameter()]
     [switch]$Json,
-
-    [Parameter()]
     [switch]$RequireTasks,
-
-    [Parameter()]
-    [switch]$IncludeTasks
+    [switch]$IncludeTasks,
+    [switch]$PathsOnly,
+    [switch]$Help
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
-# Get current branch
-$currentBranch = git rev-parse --abbrev-ref HEAD 2>$null
-if (-not $currentBranch) {
-    Write-Error "Not in a git repository"
+# Show help if requested
+if ($Help) {
+    Write-Output @"
+Usage: check-prerequisites.ps1 [OPTIONS]
+
+Consolidated prerequisite checking for Spec-Driven Development workflow.
+
+OPTIONS:
+  -Json               Output in JSON format
+  -RequireTasks       Require tasks.md to exist (for implementation phase)
+  -IncludeTasks       Include tasks.md in AVAILABLE_DOCS list
+  -PathsOnly          Only output path variables (no prerequisite validation)
+  -Help, -h           Show this help message
+
+EXAMPLES:
+  # Check task prerequisites (plan.md required)
+  .\check-prerequisites.ps1 -Json
+  
+  # Check implementation prerequisites (plan.md + tasks.md required)
+  .\check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks
+  
+  # Get feature paths only (no validation)
+  .\check-prerequisites.ps1 -PathsOnly
+
+"@
+    exit 0
+}
+
+# Source common functions
+. "$PSScriptRoot/common.ps1"
+
+# Get feature paths and validate branch
+$paths = Get-FeaturePathsEnv
+
+if (-not (Test-FeatureBranch -Branch $paths.CURRENT_BRANCH -HasGit:$paths.HAS_GIT)) { 
+    exit 1 
+}
+
+# If paths-only mode, output paths and exit (support combined -Json -PathsOnly)
+if ($PathsOnly) {
+    if ($Json) {
+        [PSCustomObject]@{
+            REPO_ROOT    = $paths.REPO_ROOT
+            BRANCH       = $paths.CURRENT_BRANCH
+            FEATURE_DIR  = $paths.FEATURE_DIR
+            FEATURE_SPEC = $paths.FEATURE_SPEC
+            IMPL_PLAN    = $paths.IMPL_PLAN
+            TASKS        = $paths.TASKS
+        } | ConvertTo-Json -Compress
+    } else {
+        Write-Output "REPO_ROOT: $($paths.REPO_ROOT)"
+        Write-Output "BRANCH: $($paths.CURRENT_BRANCH)"
+        Write-Output "FEATURE_DIR: $($paths.FEATURE_DIR)"
+        Write-Output "FEATURE_SPEC: $($paths.FEATURE_SPEC)"
+        Write-Output "IMPL_PLAN: $($paths.IMPL_PLAN)"
+        Write-Output "TASKS: $($paths.TASKS)"
+    }
+    exit 0
+}
+
+# Validate required directories and files
+if (-not (Test-Path $paths.FEATURE_DIR -PathType Container)) {
+    Write-Output "ERROR: Feature directory not found: $($paths.FEATURE_DIR)"
+    Write-Output "Run /speckit.specify first to create the feature structure."
     exit 1
 }
 
-# Determine feature directory
-$featureDir = "specs/$currentBranch"
-
-if (-not (Test-Path $featureDir)) {
-    Write-Error "Feature directory not found: $PWD/$featureDir`nRun /speckit.specify first to create the feature structure."
+if (-not (Test-Path $paths.IMPL_PLAN -PathType Leaf)) {
+    Write-Output "ERROR: plan.md not found in $($paths.FEATURE_DIR)"
+    Write-Output "Run /speckit.plan first to create the implementation plan."
     exit 1
 }
 
-# Check for required files
-$specFile = "$featureDir/spec.md"
-$planFile = "$featureDir/plan.md"
-$tasksFile = "$featureDir/tasks.md"
-
-$availableDocs = @()
-
-if (Test-Path $specFile) {
-    $availableDocs += "spec"
-}
-
-if (Test-Path $planFile) {
-    $availableDocs += "plan"
-}
-
-if (Test-Path $tasksFile) {
-    $availableDocs += "tasks"
-}
-
-# Validate requirements
-if ($RequireTasks -and -not (Test-Path $tasksFile)) {
-    Write-Error "tasks.md not found. Run /speckit.tasks first."
+# Check for tasks.md if required
+if ($RequireTasks -and -not (Test-Path $paths.TASKS -PathType Leaf)) {
+    Write-Output "ERROR: tasks.md not found in $($paths.FEATURE_DIR)"
+    Write-Output "Run /speckit.tasks first to create the task list."
     exit 1
 }
 
-# Build result
-$result = @{
-    FEATURE_DIR = $featureDir
-    BRANCH_NAME = $currentBranch
-    AVAILABLE_DOCS = $availableDocs
-    SPEC_FILE = $specFile
-    PLAN_FILE = $planFile
-    TASKS_FILE = $tasksFile
+# Build list of available documents
+$docs = @()
+
+# Always check these optional docs
+if (Test-Path $paths.RESEARCH) { $docs += 'research.md' }
+if (Test-Path $paths.DATA_MODEL) { $docs += 'data-model.md' }
+
+# Check contracts directory (only if it exists and has files)
+if ((Test-Path $paths.CONTRACTS_DIR) -and (Get-ChildItem -Path $paths.CONTRACTS_DIR -ErrorAction SilentlyContinue | Select-Object -First 1)) { 
+    $docs += 'contracts/' 
 }
 
-if ($IncludeTasks -and (Test-Path $tasksFile)) {
-    $result.TASKS_CONTENT = Get-Content $tasksFile -Raw
+if (Test-Path $paths.QUICKSTART) { $docs += 'quickstart.md' }
+
+# Include tasks.md if requested and it exists
+if ($IncludeTasks -and (Test-Path $paths.TASKS)) { 
+    $docs += 'tasks.md' 
 }
 
+# Output results
 if ($Json) {
-    $result | ConvertTo-Json
+    # JSON output
+    [PSCustomObject]@{ 
+        FEATURE_DIR = $paths.FEATURE_DIR
+        AVAILABLE_DOCS = $docs 
+    } | ConvertTo-Json -Compress
 } else {
-    Write-Host "Feature directory: $featureDir"
-    Write-Host "Available docs: $($availableDocs -join ', ')"
+    # Text output
+    Write-Output "FEATURE_DIR:$($paths.FEATURE_DIR)"
+    Write-Output "AVAILABLE_DOCS:"
+    
+    # Show status of each potential document
+    Test-FileExists -Path $paths.RESEARCH -Description 'research.md' | Out-Null
+    Test-FileExists -Path $paths.DATA_MODEL -Description 'data-model.md' | Out-Null
+    Test-DirHasFiles -Path $paths.CONTRACTS_DIR -Description 'contracts/' | Out-Null
+    Test-FileExists -Path $paths.QUICKSTART -Description 'quickstart.md' | Out-Null
+    
+    if ($IncludeTasks) {
+        Test-FileExists -Path $paths.TASKS -Description 'tasks.md' | Out-Null
+    }
 }
