@@ -1,11 +1,18 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
+import { BilingualMessage } from './BilingualMessage';
+
+interface Segment {
+    text: string;
+    lang: string;
+}
 
 interface Message {
     role: 'user' | 'assistant';
-    content: str;
+    content: string;
     id: string;
+    segments?: Segment[];
 }
 
 interface ChatInterfaceProps {
@@ -47,10 +54,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages }) => {
                             ? 'bg-indigo-600 text-white rounded-tr-none'
                             : 'glass-card text-gray-100 rounded-tl-none'
                         }`}>
-                        <p className="text-sm font-bold mb-1 opacity-50 uppercase tracking-tighter">
+                        <p className="text-sm font-bold mb-2 opacity-50 uppercase tracking-tighter">
                             {msg.role === 'user' ? 'Você' : 'Tutor IA'}
                         </p>
-                        <p className="leading-relaxed">{msg.content}</p>
+                        {msg.role === 'assistant' && msg.segments && msg.segments.length > 0 ? (
+                            <BilingualMessage segments={msg.segments} />
+                        ) : (
+                            <p className="leading-relaxed">{msg.content}</p>
+                        )}
                     </div>
                 </div>
             ))}

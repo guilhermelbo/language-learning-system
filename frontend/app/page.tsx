@@ -5,10 +5,25 @@ import { ChatInterface } from '../components/ChatInterface';
 import { VoiceButton } from '../components/VoiceButton';
 import { Sparkles, Settings, Globe } from 'lucide-react';
 
+interface Segment {
+  text: string;
+  lang: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   id: string;
+  segments?: Segment[];
+}
+
+interface APIResponse {
+  user_text: string;
+  ai_text: string;
+  segments: Segment[];
+  conversation_id: string;
+  audio_base64?: string;
+  user_audio_base64?: string;
 }
 
 export default function Home() {
@@ -34,13 +49,13 @@ export default function Home() {
 
       if (!response.ok) throw new Error("API call failed");
 
-      const data = await response.json();
+      const data: APIResponse = await response.json();
 
       setConversationId(data.conversation_id);
       setMessages(prev => [
         ...prev,
         { role: 'user', content: data.user_text, id: Math.random().toString() },
-        { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
+        { role: 'assistant', content: data.ai_text, id: Math.random().toString(), segments: data.segments }
       ]);
 
       // Play Audio
@@ -116,13 +131,13 @@ export default function Home() {
 
                     if (!response.ok) throw new Error("API call failed");
 
-                    const data = await response.json();
+                    const data: APIResponse = await response.json();
 
                     setConversationId(data.conversation_id);
                     setMessages(prev => [
                       ...prev,
                       { role: 'user', content: data.user_text, id: Math.random().toString() },
-                      { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
+                      { role: 'assistant', content: data.ai_text, id: Math.random().toString(), segments: data.segments }
                     ]);
 
                     const playAudio = async (base64Audio: string) => {

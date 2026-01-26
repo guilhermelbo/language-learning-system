@@ -20,8 +20,8 @@
 
 **Goal**: Ensure project structure supports new architecture
 
-- [ ] T001 Verify backend test infrastructure exists in `backend/tests/`
-- [ ] T002 Verify frontend can import new components in `frontend/components/`
+- [x] T001 Verify backend test infrastructure exists in `backend/tests/`
+- [x] T002 Verify frontend can import new components in `frontend/components/`
 
 ---
 
@@ -31,13 +31,13 @@
 
 ### Domain Entities
 
-- [ ] T003 [P] Create `TextSegment` frozen dataclass with text, language, order fields in `backend/src/domain/response_entities.py`
-- [ ] T004 [P] Add `__post_init__` validation to TextSegment (non-empty text, non-negative order) in `backend/src/domain/response_entities.py`
-- [ ] T005 Create `AssistantResponse` frozen dataclass with segments tuple and raw_content in `backend/src/domain/response_entities.py`
-- [ ] T006 Add computed properties (`combined_text`, `portuguese_text`, `english_text`) to AssistantResponse in `backend/src/domain/response_entities.py`
-- [ ] T007 Add `fallback()` factory method to AssistantResponse for creating error responses in `backend/src/domain/response_entities.py`
-- [ ] T008 Create unit tests for TextSegment validation in `backend/tests/test_response_entities.py`
-- [ ] T009 Create unit tests for AssistantResponse computed properties in `backend/tests/test_response_entities.py`
+- [x] T003 [P] Create `TextSegment` frozen dataclass with text, language, order fields in `backend/src/domain/response_entities.py`
+- [x] T004 [P] Add `__post_init__` validation to TextSegment (non-empty text, non-negative order) in `backend/src/domain/response_entities.py`
+- [x] T005 Create `AssistantResponse` frozen dataclass with segments tuple and raw_content in `backend/src/domain/response_entities.py`
+- [x] T006 Add computed properties (`combined_text`, `portuguese_text`, `english_text`) to AssistantResponse in `backend/src/domain/response_entities.py`
+- [x] T007 Add `fallback()` factory method to AssistantResponse for creating error responses in `backend/src/domain/response_entities.py`
+- [x] T008 Create unit tests for TextSegment validation in `backend/tests/test_response_entities.py`
+- [x] T009 Create unit tests for AssistantResponse computed properties in `backend/tests/test_response_entities.py`
 
 **Acceptance Criteria**:
 - Domain entities are immutable (frozen dataclasses)
@@ -54,27 +54,27 @@
 
 ### Content Extractor (FR-2)
 
-- [ ] T010 [US1] Create `extract_response()` function signature accepting raw string, returning AssistantResponse in `backend/src/application/response_extractor.py`
-- [ ] T011 [US1] Implement markdown code block removal (`\`\`\`json` stripping) in `backend/src/application/response_extractor.py`
-- [ ] T012 [US1] Implement JSON parsing with try/except handling in `backend/src/application/response_extractor.py`
-- [ ] T013 [US1] Implement `_normalize_to_list()` helper for handling dict vs array responses in `backend/src/application/response_extractor.py`
-- [ ] T014 [US1] Implement wrapped object detection (check for `data`, `segments`, `items`, `response` keys) in `backend/src/application/response_extractor.py`
-- [ ] T015 [US1] Implement `_create_segments()` helper to convert dicts to TextSegment instances in `backend/src/application/response_extractor.py`
-- [ ] T016 [US1] Implement fallback response creation on parse failure with logging in `backend/src/application/response_extractor.py`
-- [ ] T017 [P] [US1] Create test for valid JSON array extraction in `backend/tests/test_response_extractor.py`
-- [ ] T018 [P] [US1] Create test for markdown-wrapped JSON extraction in `backend/tests/test_response_extractor.py`
-- [ ] T019 [P] [US1] Create test for single object normalization in `backend/tests/test_response_extractor.py`
-- [ ] T020 [P] [US1] Create test for wrapped object extraction (`{"data": [...]}`) in `backend/tests/test_response_extractor.py`
-- [ ] T021 [P] [US1] Create test for empty input fallback in `backend/tests/test_response_extractor.py`
-- [ ] T022 [P] [US1] Create test for malformed JSON fallback in `backend/tests/test_response_extractor.py`
+- [x] T010 [US1] Create `extract_response()` function signature accepting raw string, returning AssistantResponse in `backend/src/application/response_extractor.py`
+- [x] T011 [US1] Implement markdown code block removal (`\`\`\`json` stripping) in `backend/src/application/response_extractor.py`
+- [x] T012 [US1] Implement JSON parsing with try/except handling in `backend/src/application/response_extractor.py`
+- [x] T013 [US1] Implement `_normalize_to_list()` helper for handling dict vs array responses in `backend/src/application/response_extractor.py`
+- [x] T014 [US1] Implement wrapped object detection (check for `data`, `segments`, `items`, `response` keys) in `backend/src/application/response_extractor.py`
+- [x] T015 [US1] Implement `_create_segments()` helper to convert dicts to TextSegment instances in `backend/src/application/response_extractor.py`
+- [x] T016 [US1] Implement fallback response creation on parse failure with logging in `backend/src/application/response_extractor.py`
+- [x] T017 [P] [US1] Create test for valid JSON array extraction in `backend/tests/test_response_extractor.py`
+- [x] T018 [P] [US1] Create test for markdown-wrapped JSON extraction in `backend/tests/test_response_extractor.py`
+- [x] T019 [P] [US1] Create test for single object normalization in `backend/tests/test_response_extractor.py`
+- [x] T020 [P] [US1] Create test for wrapped object extraction (`{"data": [...]}`) in `backend/tests/test_response_extractor.py`
+- [x] T021 [P] [US1] Create test for empty input fallback in `backend/tests/test_response_extractor.py`
+- [x] T022 [P] [US1] Create test for malformed JSON fallback in `backend/tests/test_response_extractor.py`
 
 ### Response Transformer (FR-3)
 
-- [ ] T023 [US1] Create `transform_to_api_response()` function accepting AssistantResponse, returning dict in `backend/src/application/response_transformer.py`
-- [ ] T024 [US1] Implement segment-to-dict conversion preserving text and language in `backend/src/application/response_transformer.py`
-- [ ] T025 [US1] Ensure transformer generates `ai_text` from combined segments in `backend/src/application/response_transformer.py`
-- [ ] T026 [P] [US1] Create test for transformer output structure in `backend/tests/test_response_transformer.py`
-- [ ] T027 [P] [US1] Create test for segment preservation in transformer in `backend/tests/test_response_transformer.py`
+- [x] T023 [US1] Create `transform_to_api_response()` function accepting AssistantResponse, returning dict in `backend/src/application/response_transformer.py`
+- [x] T024 [US1] Implement segment-to-dict conversion preserving text and language in `backend/src/application/response_transformer.py`
+- [x] T025 [US1] Ensure transformer generates `ai_text` from combined segments in `backend/src/application/response_transformer.py`
+- [x] T026 [P] [US1] Create test for transformer output structure in `backend/tests/test_response_transformer.py`
+- [x] T027 [P] [US1] Create test for segment preservation in transformer in `backend/tests/test_response_transformer.py`
 
 **Independent Test Criteria for US1**:
 - All extractor tests pass with mocked LLM outputs
@@ -91,18 +91,18 @@
 
 ### Use Case Integration (FR-2)
 
-- [ ] T028 [US2] Import response_extractor and response_transformer in `backend/src/application/use_cases.py`
-- [ ] T029 [US2] Replace inline JSON parsing in ProcessUserSpeechUseCase with extract_response() call in `backend/src/application/use_cases.py`
-- [ ] T030 [US2] Replace inline JSON parsing in ProcessUserTextUseCase with extract_response() call in `backend/src/application/use_cases.py`
-- [ ] T031 [US2] Update use case return dict to include segments from transformer in `backend/src/application/use_cases.py`
-- [ ] T032 [US2] Remove duplicated `_merge_wavs` method from ProcessUserTextUseCase (keep in ProcessUserSpeechUseCase or extract to shared utility) in `backend/src/application/use_cases.py`
-- [ ] T033 [US2] Update TTS synthesis loop to use segments directly from AssistantResponse in `backend/src/application/use_cases.py`
+- [x] T028 [US2] Import response_extractor and response_transformer in `backend/src/application/use_cases.py`
+- [x] T029 [US2] Replace inline JSON parsing in ProcessUserSpeechUseCase with extract_response() call in `backend/src/application/use_cases.py`
+- [x] T030 [US2] Replace inline JSON parsing in ProcessUserTextUseCase with extract_response() call in `backend/src/application/use_cases.py`
+- [x] T031 [US2] Update use case return dict to include segments from transformer in `backend/src/application/use_cases.py`
+- [x] T032 [US2] Remove duplicated `_merge_wavs` method from ProcessUserTextUseCase (keep in ProcessUserSpeechUseCase or extract to shared utility) in `backend/src/application/use_cases.py`
+- [x] T033 [US2] Update TTS synthesis loop to use segments directly from AssistantResponse in `backend/src/application/use_cases.py`
 
 ### LLM Prompt Simplification (FR-6)
 
-- [ ] T034 [US2] Update system prompt to focus on bilingual content generation (remove strict JSON requirements) in `backend/src/infrastructure/llm_service.py`
-- [ ] T035 [US2] Keep minimal format guidance (Portuguese first, then English) in `backend/src/infrastructure/llm_service.py`
-- [ ] T036 [US2] Add logging for raw LLM output before extraction in `backend/src/infrastructure/llm_service.py`
+- [x] T034 [US2] Update system prompt to focus on bilingual content generation (remove strict JSON requirements) in `backend/src/infrastructure/llm_service.py`
+- [x] T035 [US2] Keep minimal format guidance (Portuguese first, then English) in `backend/src/infrastructure/llm_service.py`
+- [x] T036 [US2] Add logging for raw LLM output before extraction in `backend/src/infrastructure/llm_service.py`
 
 **Independent Test Criteria for US2**:
 - ProcessUserSpeechUseCase returns valid response with segments
@@ -120,35 +120,35 @@
 
 ### API Contract Update (FR-4)
 
-- [ ] T037 [US3] Create `SegmentDTO` Pydantic model with text and lang fields in `backend/src/main.py`
-- [ ] T038 [US3] Create `StructuredTextResponse` model extending TextResponse with segments field in `backend/src/main.py`
-- [ ] T039 [US3] Update `/conversation/speech` endpoint to return StructuredTextResponse in `backend/src/main.py`
-- [ ] T040 [US3] Update `/conversation/text` endpoint to return StructuredTextResponse in `backend/src/main.py`
-- [ ] T041 [US3] Ensure `ai_text` field is preserved for backward compatibility in `backend/src/main.py`
+- [x] T037 [US3] Create `SegmentDTO` Pydantic model with text and lang fields in `backend/src/main.py`
+- [x] T038 [US3] Create `StructuredTextResponse` model extending TextResponse with segments field in `backend/src/main.py`
+- [x] T039 [US3] Update `/conversation/speech` endpoint to return StructuredTextResponse in `backend/src/main.py`
+- [x] T040 [US3] Update `/conversation/text` endpoint to return StructuredTextResponse in `backend/src/main.py`
+- [x] T041 [US3] Ensure `ai_text` field is preserved for backward compatibility in `backend/src/main.py`
 
 ### Frontend Types
 
-- [ ] T042 [P] [US3] Create `Segment` TypeScript interface with text and lang fields in `frontend/app/page.tsx`
-- [ ] T043 [P] [US3] Update `Message` interface to include optional `segments` array in `frontend/app/page.tsx`
-- [ ] T044 [P] [US3] Create `APIResponse` TypeScript interface matching StructuredTextResponse in `frontend/app/page.tsx`
+- [x] T042 [P] [US3] Create `Segment` TypeScript interface with text and lang fields in `frontend/app/page.tsx`
+- [x] T043 [P] [US3] Update `Message` interface to include optional `segments` array in `frontend/app/page.tsx`
+- [x] T044 [P] [US3] Create `APIResponse` TypeScript interface matching StructuredTextResponse in `frontend/app/page.tsx`
 
 ### Bilingual Message Component (FR-5)
 
-- [ ] T045 [US3] Create `BilingualMessage.tsx` component file in `frontend/components/BilingualMessage.tsx`
-- [ ] T046 [US3] Implement props interface accepting segments array in `frontend/components/BilingualMessage.tsx`
-- [ ] T047 [US3] Implement Portuguese segment display with 🇧🇷 label and blue background in `frontend/components/BilingualMessage.tsx`
-- [ ] T048 [US3] Implement English segment display with 🇬🇧 label and green background in `frontend/components/BilingualMessage.tsx`
-- [ ] T049 [US3] Add responsive layout styling (stacked vertically) in `frontend/components/BilingualMessage.tsx`
+- [x] T045 [US3] Create `BilingualMessage.tsx` component file in `frontend/components/BilingualMessage.tsx`
+- [x] T046 [US3] Implement props interface accepting segments array in `frontend/components/BilingualMessage.tsx`
+- [x] T047 [US3] Implement Portuguese segment display with 🇧🇷 label and blue background in `frontend/components/BilingualMessage.tsx`
+- [x] T048 [US3] Implement English segment display with 🇬🇧 label and green background in `frontend/components/BilingualMessage.tsx`
+- [x] T049 [US3] Add responsive layout styling (stacked vertically) in `frontend/components/BilingualMessage.tsx`
 
 ### Frontend Integration
 
-- [ ] T050 [US3] Import BilingualMessage component in `frontend/components/ChatInterface.tsx`
-- [ ] T051 [US3] Update ChatInterface to check for segments in assistant messages in `frontend/components/ChatInterface.tsx`
-- [ ] T052 [US3] Render BilingualMessage for assistant messages with segments in `frontend/components/ChatInterface.tsx`
-- [ ] T053 [US3] Implement fallback to simple content display when segments unavailable in `frontend/components/ChatInterface.tsx`
-- [ ] T054 [US3] Update page.tsx to pass segments when adding assistant messages to state in `frontend/app/page.tsx`
-- [ ] T055 [US3] Update speech response handler to extract segments from API response in `frontend/app/page.tsx`
-- [ ] T056 [US3] Update text response handler to extract segments from API response in `frontend/app/page.tsx`
+- [x] T050 [US3] Import BilingualMessage component in `frontend/components/ChatInterface.tsx`
+- [x] T051 [US3] Update ChatInterface to check for segments in assistant messages in `frontend/components/ChatInterface.tsx`
+- [x] T052 [US3] Render BilingualMessage for assistant messages with segments in `frontend/components/ChatInterface.tsx`
+- [x] T053 [US3] Implement fallback to simple content display when segments unavailable in `frontend/components/ChatInterface.tsx`
+- [x] T054 [US3] Update page.tsx to pass segments when adding assistant messages to state in `frontend/app/page.tsx`
+- [x] T055 [US3] Update speech response handler to extract segments from API response in `frontend/app/page.tsx`
+- [x] T056 [US3] Update text response handler to extract segments from API response in `frontend/app/page.tsx`
 
 **Independent Test Criteria for US3**:
 - API returns segments field in response
