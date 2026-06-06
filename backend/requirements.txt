@@ -9,7 +9,10 @@ piper-tts
 sounddevice
 numpy
 scipy
-# Utils
+# LLM clients
+openai
+# Config & Utils
 pydantic
 pydantic-settings
+python-dotenv
 uuid

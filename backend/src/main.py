@@ -4,12 +4,12 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
-import os
 
 # Domain & Infrastructure
+from .config import get_settings
 from .domain.entities import Conversation
 from .infrastructure.stt_service import FasterWhisperSTTService
-from .infrastructure.llm_service import OllamaLLMService
+from .infrastructure.llm_factory import create_llm_service
 from .infrastructure.tts_service import PiperTTSService
 from .infrastructure.repositories import InMemoryConversationRepository
 from .application.use_cases import ProcessUserSpeechUseCase, ProcessUserTextUseCase
@@ -25,21 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration (Quick & Dirty for MVP)
-# TODO: Move to config file/env vars
-STT_MODEL_SIZE = "small"
-LLM_MODEL_NAME = "mistral"
-PIPER_MODEL_PATH = os.environ.get("PIPER_MODEL_PATH", "pt_BR-faber-medium.onnx") # Exemplo
-
-# Global Dependencies (Singleton-ish for MVP)
-# In production, use dependency injection properly (Depends)
 try:
-    # Initialize Services with Container URLs
-    # Assuming default ports: STT=8001, TTS=8002, Ollama=11434
-    
-    stt_service = FasterWhisperSTTService(api_url="http://localhost:8001")
-    llm_service = OllamaLLMService(model=LLM_MODEL_NAME) # Ollama client usually defaults to localhost:11434
-    tts_service = PiperTTSService(api_url="http://localhost:8002")
+    settings = get_settings()
+
+    stt_service = FasterWhisperSTTService(api_url=settings.stt_api_url)
+    llm_service = create_llm_service(settings)
+    tts_service = PiperTTSService(api_url=settings.tts_api_url)
 
     conversation_repo = InMemoryConversationRepository()
     
