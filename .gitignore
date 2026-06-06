@@ -1,9 +1,21 @@
 # Python
 backend/venv/
+backend/.venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
 .env
+.pytest_cache/
+.coverage
+*.log
+
+# Runtime audio recordings
+backend/input_audio/
+*.webm
+*.wav
+*.mp3
+*.ogg
 
 # Next.js
 frontend/node_modules/
