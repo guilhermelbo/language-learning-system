@@ -1,15 +1,5 @@
-version: '3.8'
 
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama:/root/.ollama
-    restart: unless-stopped
-
   stt:
     build:
       context: ./ai_services/stt
@@ -28,5 +18,34 @@ services:
       - "8002:8002"
     restart: unless-stopped
 
-volumes:
-  ollama:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lingo-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL_NAME=mistral
+      - LLM_BASE_URL=http://localhost:11434/v1
+      - STT_API_URL=http://stt:8001
+      - TTS_API_URL=http://tts:8002
+      - PIPER_MODEL_PATH=pt_BR-faber-medium.onnx
+    depends_on:
+      - stt
+      - tts
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lingo-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped

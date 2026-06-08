@@ -26,8 +26,8 @@ export default function Home() {
         formData.append('conversation_id', conversationId);
       }
 
-      // TODO: Replace with actual backend URL
-      const response = await fetch('http://localhost:8000/conversation/speech', {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBaseUrl}/conversation/speech`, {
         method: 'POST',
         body: formData,
       });
@@ -57,6 +57,56 @@ export default function Home() {
         { role: 'user', content: "Simulação de fala (Backend Offline)", id: Math.random().toString() },
         { role: 'assistant', content: "Olá! Notei que o backend está offline. Configure o servidor FastAPI para processar áudio.", id: Math.random().toString() }
       ]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTextInput = async (text: string) => {
+    setIsProcessing(true);
+
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBaseUrl}/conversation/text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          conversation_id: conversationId
+        }),
+      });
+
+      if (!response.ok) throw new Error("API call failed");
+
+      const data = await response.json();
+
+      setConversationId(data.conversation_id);
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: data.user_text, id: Math.random().toString() },
+        { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
+      ]);
+
+      const playAudio = async (base64Audio: string) => {
+        return new Promise<void>((resolve) => {
+          const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
+          audio.onended = () => resolve();
+          audio.play().catch(e => {
+            console.error("Audio playback failed:", e);
+            resolve();
+          });
+        });
+      };
+
+      if (data.user_audio_base64) {
+        await playAudio(data.user_audio_base64);
+      }
+
+      if (data.audio_base64) {
+        await playAudio(data.audio_base64);
+      }
+    } catch (err) {
+      console.error("Error sending text:", err);
     } finally {
       setIsProcessing(false);
     }
@@ -102,52 +152,7 @@ export default function Home() {
                 if (e.key === 'Enter' && e.currentTarget.value.trim() && !isProcessing) {
                   const text = e.currentTarget.value.trim();
                   e.currentTarget.value = '';
-                  setIsProcessing(true);
-
-                  try {
-                    const response = await fetch('http://localhost:8000/conversation/text', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        text,
-                        conversation_id: conversationId
-                      }),
-                    });
-
-                    if (!response.ok) throw new Error("API call failed");
-
-                    const data = await response.json();
-
-                    setConversationId(data.conversation_id);
-                    setMessages(prev => [
-                      ...prev,
-                      { role: 'user', content: data.user_text, id: Math.random().toString() },
-                      { role: 'assistant', content: data.ai_text, id: Math.random().toString() }
-                    ]);
-
-                    const playAudio = async (base64Audio: string) => {
-                      return new Promise<void>((resolve) => {
-                        const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
-                        audio.onended = () => resolve();
-                        audio.play().catch(e => {
-                          console.error("Audio playback failed:", e);
-                          resolve();
-                        });
-                      });
-                    };
-
-                    if (data.user_audio_base64) {
-                      await playAudio(data.user_audio_base64);
-                    }
-
-                    if (data.audio_base64) {
-                      await playAudio(data.audio_base64);
-                    }
-                  } catch (err) {
-                    console.error("Error sending text:", err);
-                  } finally {
-                    setIsProcessing(false);
-                  }
+                  await handleTextInput(text);
                 }
               }}
               disabled={isProcessing}
