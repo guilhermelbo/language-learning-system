@@ -25,22 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try:
-    settings = get_settings()
+settings = get_settings()
 
-    stt_service = FasterWhisperSTTService(api_url=settings.stt_api_url)
-    llm_service = create_llm_service(settings)
-    tts_service = PiperTTSService(api_url=settings.tts_api_url)
+stt_service = FasterWhisperSTTService(api_url=settings.stt_api_url)
+llm_service = create_llm_service(settings)
+tts_service = PiperTTSService(api_url=settings.tts_api_url)
 
-    conversation_repo = InMemoryConversationRepository()
-    
-    use_case = ProcessUserSpeechUseCase(stt_service, llm_service, tts_service)
-    text_use_case = ProcessUserTextUseCase(llm_service, tts_service)
-    
-except Exception as e:
-    print(f"Error initializing services: {e}")
-    # Application might be unstable
-    pass
+conversation_repo = InMemoryConversationRepository()
+
+use_case = ProcessUserSpeechUseCase(stt_service, llm_service, tts_service)
+text_use_case = ProcessUserTextUseCase(llm_service, tts_service)
 
 
 import base64
@@ -61,9 +55,6 @@ async def process_speech(
     file: UploadFile = File(...), 
     conversation_id: Optional[str] = None
 ):
-    if not tts_service:
-        raise HTTPException(status_code=500, detail="TTS Service not initialized")
-
     # Load or Create Conversation
     if conversation_id:
         conversation = await conversation_repo.get_by_id(UUID(conversation_id))
@@ -98,9 +89,6 @@ async def process_speech(
 async def process_text(
     input_data: TextInput
 ):
-    if not tts_service:
-        raise HTTPException(status_code=500, detail="TTS Service not initialized")
-
     # Load or Create Conversation
     if input_data.conversation_id:
         conversation = await conversation_repo.get_by_id(UUID(input_data.conversation_id))

@@ -1,5 +1,25 @@
 # Repository Guidelines
 
+## ⛔ External Infrastructure — DO NOT MODIFY
+
+The following Docker containers are **shared infrastructure** running outside this project. They must **never** be stopped, removed, recreated, or have their configuration changed by any agent action:
+
+| Container | Purpose | Port |
+|-----------|---------|------|
+| `llamacpp` | Local LLM server (Qwen3.5) | 8080 |
+| `hindsight` | Agent memory backend | 8888 |
+| `searxng` | Web search engine | 8081 |
+
+**This means you must never run:**
+- `docker stop llamacpp` / `hindsight` / `searxng`
+- `docker rm llamacpp` / `hindsight` / `searxng`
+- `docker run ... --name llamacpp` / `hindsight` / `searxng`
+- `docker restart` / `docker kill` on any of the above
+
+If a task seems to require modifying these containers, **stop and ask the user** instead of proceeding autonomously.
+
+---
+
 ## Project Overview
 
 **LingoAI** is an AI-powered language learning tutor focused on teaching English to Portuguese speakers. The system enables real-time voice and text conversations using locally-hosted AI models for privacy and low latency.
