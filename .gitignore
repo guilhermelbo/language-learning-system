@@ -34,6 +34,12 @@ frontend/build
 ai_services/models/
 ai_services/weights/
 
+# Spec files generated/intermediate data
+.specify/extensions/
+.specify/integrations/
+.specify/scripts/
+.specify/init-options.json
+.specify/integration.json
 # Claude AI directories
 .claude/
 
