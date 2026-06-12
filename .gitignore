@@ -30,3 +30,27 @@ frontend/build
 .idea/
 
 .playwright-mcp
+# AI services local data
+ai_services/models/
+ai_services/weights/
+
+# Claude AI directories
+.claude/
+
+# GitHub workspace
+.github/
+
+# Environment files
+.env.local
+.env.*.local
+
+# Model downloads and caches
+*.gguf
+*.onnx
+*.safetensors
+.cache/
+~/.cache/
+
+# Logs
+logs/
+*.log
