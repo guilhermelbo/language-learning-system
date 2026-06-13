@@ -59,4 +59,12 @@ ai_services/weights/
 
 # Logs
 logs/
+
+# Test artifacts
+test-results/
+coverage/
+.pytest_cache/
+htmlcov/
+test-reports/
+junit.xml
 *.log

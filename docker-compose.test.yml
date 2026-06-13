@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=openai_compatible
+      - LLM_MODEL_NAME=mistral
+      - LLM_BASE_URL=http://llamacpp:8080/v1
+      - STT_API_URL=http://stt:8001
+      - TTS_API_URL=http://tts:8002
+    depends_on:
+      stt:
+        condition: service_started
+      tts:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  stt:
+    image: lingoai/stt:latest
+    ports:
+      - "8001:8001"
+
+  tts:
+    image: lingoai/tts:latest
+    ports:
+      - "8002:8002"
+
+  # Test runner container
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./tests:/app/tests
+      - test-results:/app/test-results
+    environment:
+      - PLAYWRIGHT_BROWSERS_PATH=/msrc/playwright
+    command: pytest tests/ -v --cov=backend/src --cov-report=html --cov-report=term
+
+volumes:
+  test-results:

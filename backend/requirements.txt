@@ -1,18 +1,10 @@
 fastapi
 uvicorn
 httpx
-python-multipart
-# AI/ML Dependencies
-ollama
-faster-whisper
-piper-tts
-sounddevice
-numpy
-scipy
-# LLM clients
-openai
-# Config & Utils
 pydantic
 pydantic-settings
-python-dotenv
-uuid
+
+# Testing dependencies
+pytest
+pytest-cov
+responses
