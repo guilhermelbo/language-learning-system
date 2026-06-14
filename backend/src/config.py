@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+from pydantic import field_validator
+
 
 
 class Settings(BaseSettings):
@@ -17,10 +19,17 @@ class Settings(BaseSettings):
 
     # OpenAI-compatible settings (Qwen, vLLM, Ollama /v1, etc.)
     llm_base_url: str = Field(default="http://llamacpp:8080/v1", alias="LLM_BASE_URL")
-    llm_api_key: str = Field(default="", alias="LLM_API_KEY")
+    llm_api_key: str | None = Field(default=None, alias="LLM_API_KEY")
     llm_temperature: float = Field(default=0.7, alias="LLM_TEMPERATURE")
     llm_max_tokens: int = Field(default=1024, alias="LLM_MAX_TOKENS")
     llm_enable_thinking: bool = Field(default=True, alias="LLM_ENABLE_THINKING")
+    @field_validator("llm_api_key", mode="before")
+    @classmethod
+    def empty_to_none(cls, v):
+        """Convert empty strings to None for API keys."""
+        if v == "":
+            return None
+        return v
 
     # Ollama-specific
     ollama_host: str = Field(default="http://localhost:11434", alias="OLLAMA_HOST")

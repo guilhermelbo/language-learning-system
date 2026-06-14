@@ -65,7 +65,7 @@ class OpenAICompatibleLLMService(LLMService):
         self,
         model: str,
         base_url: str,
-        api_key: str = "ollama",
+        api_key: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
         enable_thinking: bool = True,
@@ -74,7 +74,9 @@ class OpenAICompatibleLLMService(LLMService):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.enable_thinking = enable_thinking
-        self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+        # Convert empty/None to fake key for APIs that don't require auth
+        safe_api_key = api_key if api_key else "fake-key-for-unauthenticated-api"
+        self.client = AsyncOpenAI(base_url=base_url, api_key=safe_api_key)
 
     def _extra_body(self) -> dict | None:
         """Returns chat_template_kwargs to control thinking mode (Qwen3 / llama.cpp)."""
