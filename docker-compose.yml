@@ -28,6 +28,9 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER:-openai_compatible}
       - LLM_MODEL_NAME=${LLM_MODEL_NAME:-Qwen3.5-35B-A3B-UD-IQ3_S.gguf}
       - LLM_BASE_URL=${LLM_BASE_URL:-http://host.docker.internal:8080/v1}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.1}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
+      - LLM_ENABLE_THINKING=${LLM_ENABLE_THINKING:-False}
       - STT_API_URL=http://stt:8001
       - TTS_API_URL=http://tts:8002
       - PIPER_MODEL_PATH=pt_BR-faber-medium.onnx

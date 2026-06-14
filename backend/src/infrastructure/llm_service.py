@@ -8,7 +8,7 @@ from ..domain.entities import Message
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT = """/no_think
 You are a helpful bilingual language tutor (Portuguese/English).
 Valid JSON Output is MANDATORY.
 Root element must be a JSON ARRAY.

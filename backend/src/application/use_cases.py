@@ -1,8 +1,19 @@
 from ..domain.interfaces import STTService, LLMService, TTSService
 from ..domain.entities import Conversation, Message
 from datetime import datetime
+import json
 import os
+import re
 import logging
+
+
+def strip_thinking_blocks(response: str) -> str:
+    """Remove <think>...</think> reasoning blocks and markdown wrappers from model output."""
+    response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+    response = re.sub(r'</?think>', '', response)
+    response = re.sub(r'```(?:json)?\s*', '', response, flags=re.DOTALL)
+    response = re.sub(r'```\s*', '', response, flags=re.DOTALL)
+    return response.strip()
 
 class ProcessUserSpeechUseCase:
     def __init__(
@@ -44,12 +55,8 @@ class ProcessUserSpeechUseCase:
         self.logger.info(f"Step 2: Sending to LLM. History size: {len(conversation.messages)}")
         raw_response = await self.llm.generate_response(conversation.messages)
         self.logger.info(f"Step 2: LLM Raw Result: '{raw_response}'")
-        
         try:
-            import json
-            import re
-            # Clean Markdown code blocks if present
-            cleaned_response = re.sub(r'```(?:json)?', '', raw_response).strip()
+            cleaned_response = strip_thinking_blocks(raw_response)
             segments = json.loads(cleaned_response)
             
             # Handle Single Object or Wrapped List
@@ -165,10 +172,7 @@ class ProcessUserTextUseCase:
         self.logger.info(f"Step 1 (Text): LLM Raw Result: '{raw_response}'")
         
         try:
-            import json
-            import re
-            # Clean Markdown code blocks if present
-            cleaned_response = re.sub(r'```(?:json)?', '', raw_response).strip()
+            cleaned_response = strip_thinking_blocks(raw_response)
             segments = json.loads(cleaned_response)
             
             # Handle Single Object or Wrapped List
