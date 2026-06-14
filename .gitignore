@@ -68,3 +68,4 @@ htmlcov/
 test-reports/
 junit.xml
 *.log
+frontend/playwright-report/
