@@ -207,5 +207,28 @@ def test_system_prompt_injected():
 
     assert messages[0]["role"] == "system"
     assert "JSON" in messages[0]["content"]
+    assert "tutor" in messages[0]["content"].lower()
     assert messages[1]["role"] == "user"
     assert messages[1]["content"] == "hi"
+
+# ---------------------------------------------------------------------------
+# Pedagogical Content Validation
+# ---------------------------------------------------------------------------
+
+def test_system_prompt_pedagogical_content():
+    from src.infrastructure.llm_service import SYSTEM_PROMPT
+    prompt_lower = SYSTEM_PROMPT.lower()
+    
+    # Role declaration
+    assert "tutor" in prompt_lower
+    # Output format
+    assert "json" in prompt_lower
+    assert "\"lang\"" in SYSTEM_PROMPT
+    # Teaching protocol
+    assert "example" in prompt_lower or "exemplo" in prompt_lower
+    # Grammar correction
+    assert "correct" in prompt_lower or "correction" in prompt_lower
+    # Level adaptation
+    assert any(level in SYSTEM_PROMPT for level in ["A1", "A2", "B1", "B2", "C1", "C2", "CEFR"])
+    # Tone
+    assert "encourage" in prompt_lower or "patient" in prompt_lower or "encouraging" in prompt_lower
