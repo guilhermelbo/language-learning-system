@@ -157,9 +157,11 @@ class OpenAICompatibleLLMService(LLMService):
         )
         # Handle both standard content and reasoning_content (Qwen3 with llama.cpp)
         content = response.choices[0].message.content or ""
-        if response.choices[0].message.reasoning_content:
+        # Use getattr to safely access reasoning_content (may not exist in all models)
+        reasoning = getattr(response.choices[0].message, "reasoning_content", None)
+        if reasoning:
             logger.debug("OpenAICompatibleLLMService: received reasoning_content, using it instead")
-            content = response.choices[0].message.reasoning_content
+            content = reasoning
         logger.debug("OpenAICompatibleLLMService: response length=%d", len(content))
         return content
 
