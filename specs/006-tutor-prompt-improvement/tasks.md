@@ -319,3 +319,50 @@ Since this is a **single-file change** (backend/src/infrastructure/llm_service.p
 **Next Steps**:
 - Run manual validation with quickstart.md scenarios (optional)
 - Deploy and test with actual LLM (Qwen3.5 or other configured model)
+
+---
+
+## Bug Fix: reasoning_content Access Error
+
+**Issue**: Error 500 on `/conversation/text` endpoint due to `AttributeError: 'ChatCompletionMessage' object has no attribute 'reasoning_content'`
+
+**Root Cause**: The Pydantic `ChatCompletionMessage` class doesn't have `reasoning_content` as a standard attribute, causing an error when accessed directly.
+
+**Fix**: Use `getattr()` to safely access the attribute:
+```python
+reasoning = getattr(response.choices[0].message, "reasoning_content", None)
+if reasoning:
+    content = reasoning
+```
+
+**Files Modified**:
+- `backend/src/infrastructure/llm_service.py` (line 161)
+
+**Verification**:
+- ✅ Test 1: Vocabulary teaching (`"Como digo forgiveness em português?"`) - PASSED
+- ✅ Test 2: Grammar correction (`"Ontem eu vai ao mercado..."`) - PASSED
+
+---
+
+## Final Implementation Status
+
+**All tasks completed successfully!**
+
+- [X] **Phase 1 (Setup)**: 1 task complete
+- [X] **Phase 2 (Implementation)**: 10 tasks complete - SYSTEM_PROMPT fully replaced
+- [X] **Phase 3-8 (User Stories)**: 24 tasks complete - All pedagogical features implemented
+- [X] **Phase 9 (Tests)**: 7 tasks complete - All tests passing
+- [X] **Phase 10 (Documentation)**: 4 tasks complete
+- [X] **Bug Fix**: 1 task complete - reasoning_content access error resolved
+
+**Verification Results**:
+- `test_system_prompt_injected` ✅ PASSED
+- `test_system_prompt_pedagogical_content` ✅ PASSED
+- Vocabulary teaching scenario ✅ PASSED
+- Grammar correction scenario ✅ PASSED
+- JSON format compliance ✅ VERIFIED
+
+**Files Modified**:
+1. `backend/src/infrastructure/llm_service.py` - +92, -18 (SYSTEM_PROMPT + reasoning_content fix)
+2. `backend/tests/test_llm_config.py` - +23 (pedagogical test)
+3. `specs/006-tutor-prompt-improvement/tasks.md` - completion status
