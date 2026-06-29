@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Optional
-from .entities import Message
+from .entities import Message, OmniVoiceResult
 
 class STTService(ABC):
     @abstractmethod
@@ -24,8 +24,25 @@ class TTSService(ABC):
     async def synthesize(self, text: str) -> bytes:
         """Synthesizes text to audio bytes."""
         pass
-    
+
     @abstractmethod
     async def synthesize_to_file(self, text: str, output_path: str) -> str:
         """Synthesizes text to an audio file and returns the path."""
+        pass
+
+
+class OmniVoiceService(ABC):
+    @abstractmethod
+    async def process_speech(
+        self,
+        audio: bytes,
+        language: str = "en-US",
+        context: list | None = None,
+    ) -> OmniVoiceResult:
+        """Process raw audio input and return audio response with pronunciation metadata."""
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> dict:
+        """Return service health status including model_loaded flag."""
         pass

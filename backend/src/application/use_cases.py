@@ -1,6 +1,7 @@
-from ..domain.interfaces import STTService, LLMService, TTSService
-from ..domain.entities import Conversation, Message
+from ..domain.interfaces import STTService, LLMService, TTSService, OmniVoiceService
+from ..domain.entities import Conversation, Message, OmniVoiceSession, OmniAudioTurn
 from datetime import datetime
+import base64
 import json
 import os
 import re
@@ -241,22 +242,130 @@ class ProcessUserTextUseCase:
         # Reuse logic or call static
         if not wav_bytes_list:
             return b""
-        
+
         if len(wav_bytes_list) == 1:
             return wav_bytes_list[0]
-            
+
         header = wav_bytes_list[0][:44]
         data = wav_bytes_list[0][44:]
-        
+
         for wav in wav_bytes_list[1:]:
             if len(wav) > 44:
                 data += wav[44:]
-                
+
         total_size = len(header) + len(data)
         import struct
         new_riff_size = struct.pack('<I', total_size - 8)
         new_data_size = struct.pack('<I', len(data))
         new_header = header[:4] + new_riff_size + header[8:40] + new_data_size
-        
+
         return new_header + data
 
+
+# ---------------------------------------------------------------------------
+# Omni Voice Channel Use Case
+# ---------------------------------------------------------------------------
+
+class ProcessOmniVoiceUseCase:
+    def __init__(
+        self,
+        omni_service: OmniVoiceService,
+        session_repo,
+    ) -> None:
+        self.omni = omni_service
+        self.session_repo = session_repo
+        self.logger = logging.getLogger(__name__)
+
+    async def execute(
+        self,
+        audio_data: bytes,
+        session: OmniVoiceSession | None,
+        language: str = "en-US",
+    ) -> dict:
+        # Build context from prior turns for multi-turn continuity
+        context: list[dict] = []
+        open_corrections: list[dict] = []
+
+        if session:
+            for turn in session.turns:
+                context.append({"role": "user", "content": turn.transcript_user})
+                context.append({"role": "assistant", "content": turn.transcript_assistant})
+            # Collect open pronunciation corrections for drill context
+            if session.turns:
+                last_turn = session.turns[-1]
+                open_corrections = [
+                    {
+                        "word": ev.word,
+                        "error_type": ev.error_type,
+                        "correct_pronunciation": ev.correct_pronunciation,
+                        "correction_attempted": ev.correction_attempted,
+                        "role": "correction",
+                        "content": f"Please correct pronunciation of '{ev.word}'",
+                    }
+                    for ev in last_turn.pronunciation_events
+                    if not ev.correction_attempted
+                ]
+                context.extend(open_corrections)
+        else:
+            session = OmniVoiceSession()
+
+        # Call the omni model service
+        result = await self.omni.process_speech(
+            audio=audio_data,
+            language=language,
+            context=context if context else None,
+        )
+
+        # Update drill state — mark open corrections as attempted
+        for event in result.pronunciation_events:
+            if event.word in session.drill_state:
+                session.drill_state[event.word] += 1
+                event.correction_attempted = True
+                # If the same error reappears after a drill attempt, it didn't succeed
+                event.correction_succeeded = False
+            else:
+                # Check if this is a NEW error or a RESOLVED one from prior turn
+                was_open = any(c["word"] == event.word for c in open_corrections)
+                if was_open:
+                    event.correction_attempted = True
+                    event.correction_succeeded = False
+                    session.drill_state[event.word] = session.drill_state.get(event.word, 0) + 1
+
+        # Mark resolved corrections (words that were open but don't appear in new events)
+        resolved_words = {ev.word for ev in result.pronunciation_events}
+        if session.turns:
+            for prior_event in session.turns[-1].pronunciation_events:
+                if not prior_event.correction_attempted and prior_event.word not in resolved_words:
+                    prior_event.correction_attempted = True
+                    prior_event.correction_succeeded = True
+
+        # Save turn to session
+        turn = OmniAudioTurn(
+            session_id=session.id,
+            assistant_audio_bytes=result.audio_bytes,
+            transcript_user=result.transcript_user,
+            transcript_assistant=result.transcript_assistant,
+            pronunciation_events=result.pronunciation_events,
+        )
+        session.add_turn(turn)
+        await self.session_repo.save(session)
+
+        audio_b64 = base64.b64encode(result.audio_bytes).decode("utf-8") if result.audio_bytes else None
+
+        return {
+            "conversation_id": session.omni_id,
+            "user_text": result.transcript_user,
+            "ai_text": result.transcript_assistant,
+            "audio_base64": audio_b64,
+            "pronunciation_events": [
+                {
+                    "word": ev.word,
+                    "error_type": ev.error_type,
+                    "user_pronunciation": ev.user_pronunciation,
+                    "correct_pronunciation": ev.correct_pronunciation,
+                    "correction_attempted": ev.correction_attempted,
+                    "correction_succeeded": ev.correction_succeeded,
+                }
+                for ev in result.pronunciation_events
+            ],
+        }

@@ -34,12 +34,19 @@ class Settings(BaseSettings):
     # Ollama-specific
     ollama_host: str = Field(default="http://localhost:11434", alias="OLLAMA_HOST")
 
-    # Other services
+    # Standard services
     stt_api_url: str = Field(default="http://stt:8001", alias="STT_API_URL")
     tts_api_url: str = Field(default="http://tts:8002", alias="TTS_API_URL")
     piper_model_path: str = Field(
         default="pt_BR-faber-medium.onnx", alias="PIPER_MODEL_PATH"
     )
+
+    # Voice channel (speech-to-speech tutoring)
+    voice_enabled: bool = Field(default=False, alias="VOICE_ENABLED")
+    voice_provider: str = Field(default="generic", alias="VOICE_PROVIDER")
+    voice_api_url: str = Field(default="http://host.docker.internal:8003", alias="VOICE_API_URL")
+    voice_timeout_seconds: int = Field(default=30, alias="VOICE_TIMEOUT_SECONDS")
+    voice_max_audio_seconds: int = Field(default=60, alias="VOICE_MAX_AUDIO_SECONDS")
 
 
 _settings: Settings | None = None

@@ -33,6 +33,13 @@ frontend/build
 # AI services local data
 ai_services/models/
 ai_services/weights/
+ai_services/omni/models/Qwen2.5-Omni-7B/
+
+# Test audio fixtures (generated, not committed)
+tests/fixtures/*.wav
+tests/fixtures/*.mp3
+tests/fixtures/*.ogg
+tests/fixtures/*.webm
 
 # Spec files generated/intermediate data
 .specify/extensions/
