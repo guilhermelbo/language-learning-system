@@ -14,7 +14,7 @@ from .infrastructure.tts_service import PiperTTSService
 from .infrastructure.repositories import InMemoryConversationRepository, InMemoryOmniSessionRepository
 from .infrastructure.omni_service import VoiceServiceUnavailableError
 from .infrastructure.voice_factory import create_voice_service
-from .application.use_cases import ProcessUserSpeechUseCase, ProcessUserTextUseCase, ProcessOmniVoiceUseCase
+from .application.use_cases import ProcessUserSpeechUseCase, ProcessUserTextUseCase, ProcessOmniVoiceUseCase, ProcessOmniVoiceStreamUseCase
 
 app = FastAPI(title="Language Learning AI API")
 
@@ -41,13 +41,16 @@ text_use_case = ProcessUserTextUseCase(llm_service, tts_service)
 
 # Voice channel (only instantiated when enabled)
 omni_use_case: ProcessOmniVoiceUseCase | None = None
+omni_stream_use_case: ProcessOmniVoiceStreamUseCase | None = None
 if settings.voice_enabled:
     _voice_service = create_voice_service(settings)
     omni_use_case = ProcessOmniVoiceUseCase(_voice_service, omni_session_repo)
+    omni_stream_use_case = ProcessOmniVoiceStreamUseCase(_voice_service, omni_session_repo)
 
 
 import base64
 import json
+from sse_starlette.sse import EventSourceResponse
 
 
 class TextResponse(BaseModel):
@@ -203,3 +206,53 @@ async def omni_status():
         "model_loaded": health_data.get("model_loaded", False),
         "omni_api_url": settings.voice_api_url,
     }
+
+
+# ---------------------------------------------------------------------------
+# Streaming Omni Voice Channel endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/conversation/omni/speech/stream")
+async def process_omni_speech_stream(
+    file: UploadFile = File(...),
+    conversation_id: Optional[str] = Form(default=None),
+    language: str = Form(default="en-US"),
+):
+    if not settings.voice_enabled or omni_stream_use_case is None:
+        raise HTTPException(status_code=503, detail="omni_unavailable")
+
+    audio_bytes = await file.read()
+    max_bytes = settings.voice_max_audio_seconds * 32000 * 2
+    if len(audio_bytes) > max_bytes:
+        raise HTTPException(status_code=400, detail="audio_too_long")
+
+    # Resolve existing session
+    session = None
+    if conversation_id and conversation_id.startswith("omni-"):
+        raw_id = conversation_id[len("omni-"):]
+        try:
+            session = await omni_session_repo.get_by_id(UUID(raw_id))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid conversation_id format")
+        if session is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+    import logging as _logging
+    _stream_logger = _logging.getLogger(__name__)
+
+    async def event_generator():
+        try:
+            async for event in omni_stream_use_case.execute_stream(
+                audio_data=audio_bytes,
+                session=session,
+                language=language,
+            ):
+                yield event
+        except VoiceServiceUnavailableError as exc:
+            _stream_logger.error("Stream VoiceServiceUnavailableError: %s", exc)
+            yield {"event": "error", "data": json.dumps({"detail": "omni_unavailable"})}
+        except Exception as exc:
+            _stream_logger.error("Stream unexpected error: %s", exc)
+            yield {"event": "error", "data": json.dumps({"detail": str(exc)})}
+
+    return EventSourceResponse(event_generator())

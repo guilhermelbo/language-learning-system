@@ -5,6 +5,7 @@ pydantic
 pydantic-settings
 openai
 python-multipart
+sse-starlette
 # Testing dependencies
 pytest
 pytest-cov

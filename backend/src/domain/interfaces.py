@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Optional
 from .entities import Message, OmniVoiceResult
@@ -41,6 +42,24 @@ class OmniVoiceService(ABC):
     ) -> OmniVoiceResult:
         """Process raw audio input and return audio response with pronunciation metadata."""
         pass
+
+    @abstractmethod
+    async def process_speech_stream(
+        self,
+        audio: bytes,
+        language: str = "en-US",
+        context: list | None = None,
+    ) -> AsyncGenerator[dict, None]:
+        """Stream audio processing as SSE-compatible event dicts.
+
+        Yields dicts with keys 'event' and 'data' (JSON string).
+        Event types: transcript, text_delta, sentence_audio,
+                     pronunciation_events, done, error.
+        """
+        # Workaround: abstract async generators must yield at least once
+        # to satisfy the AsyncGenerator type; subclasses override fully.
+        return
+        yield  # pragma: no cover
 
     @abstractmethod
     async def health_check(self) -> dict:

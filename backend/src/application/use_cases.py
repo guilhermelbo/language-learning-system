@@ -1,5 +1,7 @@
+from __future__ import annotations
+from typing import AsyncGenerator
 from ..domain.interfaces import STTService, LLMService, TTSService, OmniVoiceService
-from ..domain.entities import Conversation, Message, OmniVoiceSession, OmniAudioTurn
+from ..domain.entities import Conversation, Message, OmniVoiceSession, OmniAudioTurn, PronunciationEvent
 from datetime import datetime
 import base64
 import json
@@ -369,3 +371,115 @@ class ProcessOmniVoiceUseCase:
                 for ev in result.pronunciation_events
             ],
         }
+
+
+# ---------------------------------------------------------------------------
+# Streaming Omni Voice Use Case
+# ---------------------------------------------------------------------------
+
+class ProcessOmniVoiceStreamUseCase:
+    """Streaming variant of ProcessOmniVoiceUseCase.
+
+    Calls process_speech_stream on the omni service and forwards all SSE
+    events to the caller, saving the session after the 'done' event.
+    """
+
+    def __init__(
+        self,
+        omni_service: OmniVoiceService,
+        session_repo,
+    ) -> None:
+        self.omni = omni_service
+        self.session_repo = session_repo
+        self.logger = logging.getLogger(__name__)
+
+    async def execute_stream(
+        self,
+        audio_data: bytes,
+        session: OmniVoiceSession | None,
+        language: str = "en-US",
+    ) -> AsyncGenerator[dict, None]:
+        # Build context (same logic as ProcessOmniVoiceUseCase)
+        context: list[dict] = []
+        open_corrections: list[dict] = []
+
+        if session:
+            for turn in session.turns:
+                context.append({"role": "user", "content": turn.transcript_user})
+                context.append({"role": "assistant", "content": turn.transcript_assistant})
+            if session.turns:
+                last_turn = session.turns[-1]
+                open_corrections = [
+                    {
+                        "word": ev.word,
+                        "error_type": ev.error_type,
+                        "correct_pronunciation": ev.correct_pronunciation,
+                        "correction_attempted": ev.correction_attempted,
+                        "role": "correction",
+                        "content": f"Please correct pronunciation of '{ev.word}'",
+                    }
+                    for ev in last_turn.pronunciation_events
+                    if not ev.correction_attempted
+                ]
+                context.extend(open_corrections)
+        else:
+            session = OmniVoiceSession()
+
+        # Accumulators for turn data
+        user_text: str = ""
+        ai_text_parts: list[str] = []
+        pe_dicts: list[dict] = []
+
+        async for event in self.omni.process_speech_stream(
+            audio=audio_data,
+            language=language,
+            context=context if context else None,
+        ):
+            event_type = event.get("event", "")
+
+            if event_type == "transcript":
+                data = json.loads(event["data"])
+                user_text = data.get("user_text", "")
+
+            elif event_type == "text_delta":
+                data = json.loads(event["data"])
+                ai_text_parts.append(data.get("delta", ""))
+
+            elif event_type == "pronunciation_events":
+                data = json.loads(event["data"])
+                pe_dicts = data if isinstance(data, list) else []
+
+            elif event_type == "done":
+                ai_text = "".join(ai_text_parts)
+
+                pronunciation_events = [
+                    PronunciationEvent(
+                        word=d.get("word", ""),
+                        error_type=d.get("error_type", "other"),
+                        user_pronunciation=d.get("user_pronunciation", ""),
+                        correct_pronunciation=d.get("correct_pronunciation", ""),
+                        correction_attempted=d.get("correction_attempted", False),
+                        correction_succeeded=d.get("correction_succeeded"),
+                    )
+                    for d in pe_dicts
+                    if d.get("word")
+                ]
+
+                turn = OmniAudioTurn(
+                    session_id=session.id,
+                    assistant_audio_bytes=b"",  # individual audio in sentence_audio events
+                    transcript_user=user_text,
+                    transcript_assistant=ai_text,
+                    pronunciation_events=pronunciation_events,
+                )
+                session.add_turn(turn)
+                await self.session_repo.save(session)
+
+                # Override conversation_id with the real session ID
+                yield {
+                    "event": "done",
+                    "data": json.dumps({"conversation_id": session.omni_id}),
+                }
+                continue
+
+            yield event

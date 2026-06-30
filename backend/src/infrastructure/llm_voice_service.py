@@ -14,7 +14,7 @@ import json
 import logging
 import re
 import subprocess
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import httpx
 
@@ -132,6 +132,15 @@ def _strip_user_transcript_block(text: str) -> str:
     """Remove the USER_TRANSCRIPT block from text."""
     pattern = r"\s*<!--\s*USER_TRANSCRIPT:\s*.*?\s*-->"
     return re.sub(pattern, "", text, flags=re.DOTALL).strip()
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?…])\s+")
+
+
+def _split_sentences(text: str) -> list[str]:
+    """Split clean text into sentences on .!?… boundaries."""
+    parts = _SENTENCE_END.split(text.strip())
+    return [p.strip() for p in parts if p.strip()]
 
 
 def _build_system_prompt(context: list | None) -> str:
@@ -324,6 +333,161 @@ class OpenAICompatibleVoiceService(OmniVoiceService):
             transcript_assistant=clean_text,
             pronunciation_events=pronunciation_events,
         )
+
+    async def _call_llm_stream(
+        self,
+        audio: bytes,
+        language: str,
+        context: list | None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream LLM response tokens via llamacpp stream=True mode.
+
+        Yields raw text tokens as they arrive. Falls back to non-streaming
+        _call_llm and yields the full response as one token if streaming
+        is not supported (e.g. input_audio + stream not available).
+        """
+        audio_b64 = base64.b64encode(audio).decode("utf-8")
+        audio_format = "wav"  # audio is already converted before this call
+
+        message_context = [c for c in (context or []) if "role" in c]
+        system_prompt = _build_system_prompt(context)
+
+        messages: list[dict] = [{"role": "system", "content": system_prompt}]
+        for turn in message_context:
+            messages.append({"role": turn["role"], "content": turn["content"]})
+        messages.append({
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": audio_b64, "format": audio_format},
+                },
+                {
+                    "type": "text",
+                    "text": "Please respond as the language tutor to what you hear in the audio.",
+                },
+            ],
+        })
+
+        payload = {
+            "model": self._model or "gemma4",
+            "messages": messages,
+            "max_tokens": 512,
+            "chat_template_kwargs": {"enable_thinking": False},
+            "stream": True,
+        }
+
+        tokens_yielded = False
+        try:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self._base_url}/chat/completions",
+                    json=payload,
+                    headers=self._headers(),
+                ) as response:
+                    if not response.is_success:
+                        raise VoiceServiceUnavailableError(
+                            f"LLM stream error {response.status_code}"
+                        )
+                    async for line in response.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                        raw = line[6:].strip()
+                        if raw == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(raw)
+                            delta = (
+                                chunk.get("choices", [{}])[0]
+                                .get("delta", {})
+                                .get("content") or ""
+                            )
+                            if delta:
+                                tokens_yielded = True
+                                yield delta
+                        except (json.JSONDecodeError, IndexError, KeyError):
+                            continue
+        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            logger.error("LLM stream unreachable: %s", exc)
+            raise VoiceServiceUnavailableError(str(exc)) from exc
+
+        if not tokens_yielded:
+            # Fallback: streaming not supported — use non-streaming call
+            logger.warning("Streaming yielded no tokens; falling back to non-streaming _call_llm")
+            full = await self._call_llm(audio, language, context)
+            yield full
+
+    async def process_speech_stream(
+        self,
+        audio: bytes,
+        language: str = "en-US",
+        context: list | None = None,
+    ) -> AsyncGenerator[dict, None]:
+        """Stream pronunciation coaching response as SSE-compatible event dicts."""
+        try:
+            audio_format = _detect_audio_format(audio)
+            if audio_format != "wav":
+                logger.debug("Converting %s to WAV before stream LLM call", audio_format)
+                audio = _to_wav(audio)
+
+            # Phase 1: stream tokens, emit text_delta per token, accumulate full_text
+            full_text = ""
+            async for token in self._call_llm_stream(audio, language, context):
+                full_text += token
+                yield {"event": "text_delta", "data": json.dumps({"delta": token})}
+
+            if not full_text:
+                raise VoiceServiceUnavailableError(
+                    "LLM returned empty streaming response"
+                )
+
+            # Phase 2: parse metadata blocks from accumulated response
+            transcript_user = _extract_user_transcript(full_text)
+            text_without_pe, raw_events = _extract_pronunciation_events(full_text)
+            clean_text = _strip_user_transcript_block(text_without_pe)
+
+            yield {"event": "transcript", "data": json.dumps({"user_text": transcript_user})}
+
+            # Phase 3: TTS per sentence
+            sentences = _split_sentences(clean_text)
+            for i, sentence in enumerate(sentences):
+                audio_bytes = await self._synthesize(sentence, language)
+                b64 = base64.b64encode(audio_bytes).decode("utf-8") if audio_bytes else ""
+                yield {
+                    "event": "sentence_audio",
+                    "data": json.dumps({
+                        "index": i,
+                        "text": sentence,
+                        "audio_base64": b64,
+                        "tts_ok": bool(audio_bytes),
+                    }),
+                }
+
+            # Phase 4: pronunciation events
+            pe_dicts = [
+                {
+                    "word": ev.get("word", ""),
+                    "error_type": ev.get("error_type", "other"),
+                    "user_pronunciation": ev.get("user_pronunciation", ""),
+                    "correct_pronunciation": ev.get("correct_pronunciation", ""),
+                    "correction_attempted": ev.get("correction_attempted", False),
+                    "correction_succeeded": ev.get("correction_succeeded"),
+                }
+                for ev in raw_events
+                if ev.get("word")
+            ]
+            yield {"event": "pronunciation_events", "data": json.dumps(pe_dicts)}
+
+            # Done — conversation_id filled in by use case layer
+            yield {"event": "done", "data": json.dumps({"conversation_id": ""})}
+
+        except VoiceServiceUnavailableError as exc:
+            logger.error("process_speech_stream error: %s", exc)
+            yield {"event": "error", "data": json.dumps({"detail": str(exc)})}
+        except Exception as exc:
+            logger.error("Unexpected error in process_speech_stream: %s", exc)
+            yield {"event": "error", "data": json.dumps({"detail": str(exc)})}
 
     async def health_check(self) -> dict:
         try:

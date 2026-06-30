@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChatInterface, Message } from "../components/ChatInterface";
 import { VoiceButton } from "../components/VoiceButton";
 import { OmniStatusBadge } from "../components/OmniStatusBadge";
-import { PronunciationEvent } from "../components/PronunciationEventCard";
+import { VoiceTutorLive } from "../components/VoiceTutorLive";
 import { Sparkles, Settings, Globe } from "lucide-react";
 
 type VoiceMode = "standard" | "omni";
@@ -49,10 +49,6 @@ export default function Home() {
 
   // --- Standard voice handler ---
   const handleRecordingComplete = async (blob: Blob) => {
-    if (voiceMode === "omni") {
-      return handleOmniRecordingComplete(blob);
-    }
-
     setIsProcessing(true);
     try {
       const formData = new FormData();
@@ -91,61 +87,6 @@ export default function Home() {
           id: Math.random().toString(),
         },
       ]);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // --- Omni voice handler ---
-  const handleOmniRecordingComplete = async (blob: Blob) => {
-    setIsProcessing(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", blob, "recording.webm");
-      if (omniConversationId) {
-        formData.append("conversation_id", omniConversationId);
-      }
-
-      const response = await fetch(`${API_BASE}/conversation/omni/speech`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.status === 503) {
-        showToast("Voice Tutor mode is currently unavailable. Standard mode is still active.");
-        setVoiceMode("standard");
-        return;
-      }
-      if (!response.ok) throw new Error(`Omni API error: ${response.status}`);
-
-      const data = await response.json();
-
-      // Carry conversation ID forward
-      if (data.conversation_id) {
-        setOmniConversationId(data.conversation_id);
-      }
-
-      const pronunciationEvents: PronunciationEvent[] = data.pronunciation_events ?? [];
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: data.user_text || "…", id: Math.random().toString() },
-        {
-          role: "assistant",
-          content: data.ai_text,
-          id: Math.random().toString(),
-          pronunciationEvents: pronunciationEvents.length > 0 ? pronunciationEvents : undefined,
-        },
-      ]);
-
-      if (data.audio_base64) {
-        const audio = new Audio(`data:audio/wav;base64,${data.audio_base64}`);
-        audio.play().catch((e) => console.error("Omni audio playback failed:", e));
-      }
-    } catch (err) {
-      console.error("Omni voice error:", err);
-      showToast("Voice Tutor mode is currently unavailable. Standard mode is still active.");
-      // Do NOT clear omniConversationId — allows retry if service recovers
     } finally {
       setIsProcessing(false);
     }
@@ -254,47 +195,51 @@ export default function Home() {
             </div>
           )}
 
-          {/* Text Input (standard mode only) */}
+          {/* Standard mode controls */}
           {voiceMode === "standard" && (
-            <div className="w-full relative">
-              <input
-                type="text"
-                placeholder="Digite sua mensagem..."
-                className="w-full bg-white/5 border border-white/10 rounded-full px-6 py-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-light"
-                onKeyDown={async (e) => {
-                  if (e.key === "Enter" && e.currentTarget.value.trim() && !isProcessing) {
-                    const text = e.currentTarget.value.trim();
-                    e.currentTarget.value = "";
-                    await handleTextInput(text);
-                  }
-                }}
-                disabled={isProcessing}
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                {isProcessing && (
-                  <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
-                )}
+            <>
+              <div className="w-full relative">
+                <input
+                  type="text"
+                  placeholder="Digite sua mensagem..."
+                  className="w-full bg-white/5 border border-white/10 rounded-full px-6 py-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-light"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim() && !isProcessing) {
+                      const text = e.currentTarget.value.trim();
+                      e.currentTarget.value = "";
+                      await handleTextInput(text);
+                    }
+                  }}
+                  disabled={isProcessing}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {isProcessing && (
+                    <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                  )}
+                </div>
               </div>
-            </div>
+
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-white/10 w-32" />
+                <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">OU FALE</span>
+                <div className="h-px flex-1 bg-white/10 w-32" />
+              </div>
+
+              <VoiceButton
+                onRecordingComplete={handleRecordingComplete}
+                isProcessing={isProcessing}
+              />
+            </>
           )}
 
-          {voiceMode === "standard" && (
-            <div className="flex items-center gap-4">
-              <div className="h-px flex-1 bg-white/10 w-32" />
-              <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">OU FALE</span>
-              <div className="h-px flex-1 bg-white/10 w-32" />
-            </div>
-          )}
-
-          <VoiceButton
-            onRecordingComplete={handleRecordingComplete}
-            isProcessing={isProcessing}
-          />
-
+          {/* Voice Tutor — hands-free continuous conversation */}
           {voiceMode === "omni" && (
-            <p className="text-xs text-gray-500 text-center">
-              Voice Tutor analisa sua pronúncia em tempo real
-            </p>
+            <VoiceTutorLive
+              conversationId={omniConversationId}
+              onConversationIdChange={setOmniConversationId}
+              language="en-US"
+              onSwitchToStandard={() => setVoiceMode("standard")}
+            />
           )}
         </div>
       </footer>
