@@ -34,11 +34,11 @@ services:
       - STT_API_URL=http://stt:8001
       - TTS_API_URL=http://tts:8002
       - PIPER_MODEL_PATH=pt_BR-faber-medium.onnx
-      - VOICE_ENABLED=${VOICE_ENABLED:-false}
-      - VOICE_PROVIDER=${VOICE_PROVIDER:-generic}
-      # VOICE_API_URL deve apontar para o servidor de voz rodando externamente.
-      # Exemplo: http://host.docker.internal:8003 se rodando na mesma máquina.
-      - VOICE_API_URL=${VOICE_API_URL:-http://host.docker.internal:8003}
+      - VOICE_ENABLED=${VOICE_ENABLED:-true}
+      - VOICE_PROVIDER=${VOICE_PROVIDER:-openai_compatible}
+      # llamacpp com Gemma 4 rodando externamente na porta 8080 do host (suporte a áudio nativo).
+      - VOICE_API_URL=${VOICE_API_URL:-http://host.docker.internal:8080/v1}
+      - VOICE_MODEL_NAME=${VOICE_MODEL_NAME:-gemma-4-12B-it-Q5_K_M.gguf}
       - VOICE_TIMEOUT_SECONDS=${VOICE_TIMEOUT_SECONDS:-30}
       - VOICE_MAX_AUDIO_SECONDS=${VOICE_MAX_AUDIO_SECONDS:-60}
     restart: unless-stopped

@@ -182,7 +182,9 @@ async def process_omni_speech(
             session=session,
             language=language,
         )
-    except VoiceServiceUnavailableError:
+    except VoiceServiceUnavailableError as exc:
+        import logging as _logging
+        _logging.getLogger(__name__).error("VoiceServiceUnavailableError: %s", exc)
         raise HTTPException(status_code=503, detail="omni_unavailable")
 
     return result

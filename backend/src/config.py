@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     voice_enabled: bool = Field(default=False, alias="VOICE_ENABLED")
     voice_provider: str = Field(default="generic", alias="VOICE_PROVIDER")
     voice_api_url: str = Field(default="http://host.docker.internal:8003", alias="VOICE_API_URL")
+    voice_model_name: str = Field(default="", alias="VOICE_MODEL_NAME")
     voice_timeout_seconds: int = Field(default=30, alias="VOICE_TIMEOUT_SECONDS")
     voice_max_audio_seconds: int = Field(default=60, alias="VOICE_MAX_AUDIO_SECONDS")
 
