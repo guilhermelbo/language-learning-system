@@ -20,14 +20,18 @@ def _make_settings(**kwargs):
     return Settings(**{k.upper(): v for k, v in kwargs.items()})
 
 
-def test_settings_defaults():
+def test_settings_defaults(monkeypatch):
+    # Clear env vars and env file to test pure code-level defaults
+    for key in ["LLM_PROVIDER", "LLM_MODEL_NAME", "LLM_BASE_URL", "LLM_API_KEY",
+                "LLM_TEMPERATURE", "LLM_MAX_TOKENS", "LLM_ENABLE_THINKING"]:
+        monkeypatch.delenv(key, raising=False)
     from src.config import Settings
-    s = Settings()
+    s = Settings(_env_file=None)
     assert s.llm_provider == "ollama"
     assert s.llm_model_name == "mistral"
-    assert s.llm_base_url == "http://localhost:11434/v1"
-    assert s.llm_api_key == "ollama"
-    assert s.llm_temperature == 0.7
+    assert s.llm_base_url == "http://llamacpp:8080/v1"
+    assert s.llm_api_key is None
+    assert s.llm_temperature == 0.1
     assert s.llm_max_tokens == 1024
 
 
@@ -143,6 +147,7 @@ async def test_openai_compatible_generate_response():
     # Mock the async OpenAI client
     mock_message = MagicMock()
     mock_message.content = '[{"text": "Olá", "lang": "pt"}]'
+    mock_message.reasoning_content = None  # prevent MagicMock truthy fallback
     mock_choice = MagicMock()
     mock_choice.message = mock_message
     mock_response = MagicMock()

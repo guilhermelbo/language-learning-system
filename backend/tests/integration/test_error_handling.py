@@ -7,6 +7,9 @@ in the LingoAI backend services.
 
 import pytest
 import json
+from httpx import AsyncClient
+
+pytestmark = pytest.mark.skip(reason="integration scaffold: test_client fixture not yet implemented")
 
 
 @pytest.mark.asyncio

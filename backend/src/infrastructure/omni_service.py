@@ -4,7 +4,7 @@ GenericVoiceHttpService — HTTP adapter for the ai_services/omni FastAPI servic
 Implements OmniVoiceService from the domain layer.
 """
 import logging
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import httpx
 
@@ -83,6 +83,16 @@ class GenericVoiceHttpService(OmniVoiceService):
             transcript_assistant=payload.get("transcript_assistant", ""),
             pronunciation_events=pronunciation_events,
         )
+
+    async def process_speech_stream(
+        self,
+        audio: bytes,
+        language: str = "en-US",
+        context: list | None = None,
+    ) -> AsyncGenerator[dict, None]:
+        """Not implemented for the generic HTTP provider — use OpenAICompatibleVoiceService."""
+        yield {"event": "error", "data": '{"detail": "streaming not supported by generic provider"}'}
+        return
 
     async def health_check(self) -> dict:
         try:

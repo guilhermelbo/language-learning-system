@@ -280,8 +280,7 @@ class OpenAICompatibleVoiceService(OmniVoiceService):
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 response = await client.post(
                     f"{self._tts_api_url}/synthesize",
-                    json={"text": text},
-                    params={"lang": lang},
+                    json={"text": text, "lang": lang},
                 )
             if response.is_success:
                 return response.content
